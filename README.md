@@ -3,8 +3,6 @@
 [![.github/workflows/ci.yml](https://github.com/clause/471c/actions/workflows/ci.yml/badge.svg)](https://github.com/clause/471c/actions/workflows/ci.yml)
 [![Coverage](https://codecov.io/gh/clause/471c/branch/main/graph/badge.svg)](https://codecov.io/gh/clause/471c)
 
-![coverage](https://gitlab.eecis.udel.edu/clause/471c/badges/main/coverage.svg?job=pytest)
-
 # Contributing 
 
 See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
