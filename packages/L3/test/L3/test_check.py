@@ -18,20 +18,6 @@ from L3.syntax import (
 
 
 @pytest.mark.skip
-def test_check_term_let():
-    term = Let(
-        bindings=[
-            ("x", Immediate(value=0)),
-        ],
-        body=Reference(name="x"),
-    )
-
-    context: Context = {}
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
 def test_check_term_let_scope():
     term = Let(
         bindings=[
@@ -129,6 +115,7 @@ def test_check_term_reference_free():
         check_term(term, context)
 
 
+<<<<<<< HEAD
 @pytest.mark.skip
 def test_check_term_abstract():
     term = Abstract(
@@ -274,3 +261,20 @@ def test_check_program_duplicate_parameters():
 
     with pytest.raises(ValueError):
         check_program(program)
+
+def test_check_term_let():
+    term = Let(
+            bindings= [
+                ("x", Immediate(value=0)),
+                ("y", Immediate(value=1))
+            ],
+            body=Reference(name="x"),
+    )
+    
+    # Remember that context in this case is the context for this term. Aka any arguments already stated before this term
+    # In other words, declared variables before this variable
+    context = Context = {
+        "y" : None,
+    }
+
+    check_term(term, context)
