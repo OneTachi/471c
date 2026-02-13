@@ -1,0 +1,1 @@
+This language simplifies from the L3 language by removing LetRec completely. It still retains the same characteristics seen from L3. However, this simplification still allows for the same features because the obtained values in the parameters in LetRec can be passed from another function or created. Then Let can take the passed values creating the same intent as LetRec. 
