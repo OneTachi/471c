@@ -33,6 +33,7 @@ from L3.syntax import (
 )
 
 
+<<<<<<< HEAD
 @pytest.mark.skip
 def test_check_term_let_scope():
     term = Let(
@@ -112,6 +113,9 @@ def test_check_term_letrec_duplicate_binders():
 
 @pytest.mark.skip
 def test_check_term_reference_bound():
+=======
+def test_check_reference_bound():
+>>>>>>> 184153f (add Let and LetRec tests)
     term = Reference(name="x")
 
     context: Context = {
@@ -121,8 +125,12 @@ def test_check_term_reference_bound():
     check_term(term, context)
 
 
+<<<<<<< HEAD
 @pytest.mark.skip
 def test_check_term_reference_free():
+=======
+def test_check_reference_free():
+>>>>>>> 184153f (add Let and LetRec tests)
     term = Reference(name="x")
 
     context: Context = {}
@@ -294,3 +302,59 @@ def test_check_term_let():
     }
 
     check_term(term, context)
+
+def test_check_let_not_bound():
+    term = Let(
+        bindings = [
+            ("x", Immediate(value=0)),
+            ("y", Reference(name="x"))
+        ],
+        body=Reference(name="y")
+    )
+
+    context = Context = {}
+    with pytest.raises(ValueError):
+        check_term(term, context)
+
+def test_check_let_duped():
+    term = Let(
+        bindings = [
+            ("x", Immediate(value=0)),
+            ("x", Immediate(value=1))
+        ],
+        body=Reference(name="x")
+    )
+
+    context = Context = {
+        "x" : None,
+    }
+
+    with pytest.raises(ValueError):
+        check_term(term, context)
+
+def test_check_letrec_duped():
+    term = LetRec(
+        bindings = [
+            ("x", Immediate(value=0)),
+            ("x", Immediate(value=1))
+        ],
+        body=Reference(name="x")
+    )
+
+    context = Context = {}
+
+    with pytest.raises(ValueError):
+        check_term(term, context)
+
+def test_check_letrec_binding_exists():
+    term = LetRec(
+        bindings = [
+            ("x", Immediate(value=0)),
+            ("y", Reference(name="x"))
+        ],
+        body=Reference(name="y")
+    )
+
+    context = Context = {}
+    check_term(term, context)
+

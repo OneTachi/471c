@@ -19,6 +19,7 @@ from .syntax import (
     Reference,
     Store,
     Term,
+    Program,
 )
 
 type Context = Mapping[Identifier, None]
@@ -48,24 +49,17 @@ def check_term(
             duplicates = {name: count for name, count in counts.items() if count > 1}
             if duplicates:
                 raise ValueError(f"duplicate binders: {duplicates}")
-
             local = dict.fromkeys([name for name, _ in bindings])
-
             for name, value in bindings:
-                recur(value, context={**context, **local})
+                # Add additional context from bindings we know are in params
+                recur(body, context={**context, **local})
+           
+            check_term(body, context={**context, **local})
 
-            check_term(body, {**context, **local})
 
         case Reference(name=name):
             if name not in context:
                 raise ValueError(f"unknown variable: {name}")
-            counts = Counter(parameters)
-            duplicates = {name for name, count in counts.items() if count > 1}
-            if duplicates:
-                raise ValueError(f"duplicate parameters: {duplicates}")
-
-            local = dict.fromkeys(parameters, None)
-            recur(body, context={**context, **local})
 
         case Apply(target=target, arguments=arguments):
             recur(target)
