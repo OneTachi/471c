@@ -71,12 +71,27 @@ def check_term(
             for argument in arguments:
                 recur(argument)
 
-        case Immediate(value=_value):
+        case Abstract(parameters=parameters, body=body):
+            counts = Counter(parameters)
+            duplicates = {name for name, count for counts.items() if count > 1}
+            if duplicates:
+                raise ValueError(f"duplicate parameters: {duplicates}")
+
+            local = dict.fromkeys(parameters, None)
+            recur(body, context={**context, **local})
+
+        case Apply(target=target, arguments=arguments):
+            for argument in arguments:
+                recur(argument)
+            recur(target)
+
+        # Anything that goes here will be a valid value as its an int
+        case Immediate(value=_value): 
             pass
 
-        case Primitive(operator=_operator, left=left, right=right):
-            recur(left)
-            recur(right)
+        case Primitive(operator=operator, left=left, right=right):
+            check_term(left)
+            check_term(right)
 
         case Branch(operator=_operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
             recur(left)
@@ -84,6 +99,7 @@ def check_term(
             recur(consequent)
             recur(otherwise)
 
+        # We merely allocate memory here, it just needs an int for space, not a term.
         case Allocate(count=_count):
             pass
 
@@ -109,6 +125,5 @@ def check_program(
             duplicates = {name for name, count in counts.items() if count > 1}
             if duplicates:
                 raise ValueError(f"duplicate parameters: {duplicates}")
-
             local = dict.fromkeys(parameters, None)
             check_term(body, context=local)
