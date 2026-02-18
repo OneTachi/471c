@@ -1,4 +1,5 @@
 import pytest
+<<<<<<< HEAD
 from L3.check import Context, check_program, check_term
 from L3.syntax import (
     Abstract,
@@ -7,13 +8,28 @@ from L3.syntax import (
     Begin,
     Branch,
     Immediate,
+=======
+from L3.check import Context, check_term
+from L3.syntax import (
+    Reference,
+    Abstract, 
+    Allocate,
+    Apply,
+    Begin,
+    Branch, 
+    Immediate, 
+>>>>>>> 948b90c (fix syntax & library issues)
     Let,
     LetRec,
     Load,
     Primitive,
     Program,
+<<<<<<< HEAD
     Reference,
     Store,
+=======
+    Store
+>>>>>>> 948b90c (fix syntax & library issues)
 )
 
 

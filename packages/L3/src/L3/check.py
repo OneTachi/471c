@@ -1,5 +1,6 @@
 from collections import Counter
 from collections.abc import Mapping
+from collections import Counter
 from functools import partial
 
 from .syntax import (
@@ -73,7 +74,7 @@ def check_term(
 
         case Abstract(parameters=parameters, body=body):
             counts = Counter(parameters)
-            duplicates = {name for name, count for counts.items() if count > 1}
+            duplicates = {name for name, count in counts.items() if count > 1}
             if duplicates:
                 raise ValueError(f"duplicate parameters: {duplicates}")
 
@@ -90,8 +91,8 @@ def check_term(
             pass
 
         case Primitive(operator=operator, left=left, right=right):
-            check_term(left)
-            check_term(right)
+            recur(left)
+            recur(right)
 
         case Branch(operator=_operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
             recur(left)
