@@ -1,14 +1,5 @@
 import pytest
-<<<<<<< HEAD
 from L3.check import Context, check_program, check_term
-from L3.syntax import (
-    Abstract,
-    Allocate,
-    Apply,
-    Begin,
-    Branch,
-    Immediate,
-=======
 from L3.check import Context, check_term
 from L3.syntax import (
     Reference,
@@ -18,104 +9,16 @@ from L3.syntax import (
     Begin,
     Branch, 
     Immediate, 
->>>>>>> 948b90c (fix syntax & library issues)
     Let,
     LetRec,
     Load,
     Primitive,
     Program,
-<<<<<<< HEAD
     Reference,
     Store,
-=======
-    Store
->>>>>>> 948b90c (fix syntax & library issues)
 )
 
-
-<<<<<<< HEAD
-@pytest.mark.skip
-def test_check_term_let_scope():
-    term = Let(
-        bindings=[
-            ("x", Immediate(value=0)),
-            ("y", Reference(name="x")),
-        ],
-        body=Reference(name="y"),
-    )
-
-    context: Context = {}
-
-    with pytest.raises(ValueError):
-        check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_let_duplicate_binders():
-    term = Let(
-        bindings=[
-            ("x", Immediate(value=0)),
-            ("x", Immediate(value=1)),
-        ],
-        body=Reference(name="x"),
-    )
-
-    context: Context = {}
-
-    with pytest.raises(ValueError):
-        check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_letrec():
-    term = LetRec(
-        bindings=[
-            ("x", Immediate(value=0)),
-        ],
-        body=Reference(name="x"),
-    )
-
-    context: Context = {}
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_letrec_scope():
-    term = LetRec(
-        bindings=[
-            ("y", Reference(name="x")),
-            ("x", Immediate(value=0)),
-        ],
-        body=Reference(name="x"),
-    )
-
-    context: Context = {}
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_letrec_duplicate_binders():
-    term = LetRec(
-        bindings=[
-            ("x", Immediate(value=0)),
-            ("x", Immediate(value=1)),
-        ],
-        body=Reference(name="x"),
-    )
-
-    context: Context = {}
-
-    with pytest.raises(ValueError):
-        check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_reference_bound():
-=======
 def test_check_reference_bound():
->>>>>>> 184153f (add Let and LetRec tests)
     term = Reference(name="x")
 
     context: Context = {
@@ -125,166 +28,13 @@ def test_check_reference_bound():
     check_term(term, context)
 
 
-<<<<<<< HEAD
-@pytest.mark.skip
-def test_check_term_reference_free():
-=======
 def test_check_reference_free():
->>>>>>> 184153f (add Let and LetRec tests)
     term = Reference(name="x")
 
     context: Context = {}
 
     with pytest.raises(ValueError):
         check_term(term, context)
-
-
-<<<<<<< HEAD
-@pytest.mark.skip
-def test_check_term_abstract():
-    term = Abstract(
-        parameters=["x"],
-        body=Immediate(value=0),
-    )
-
-    context: Context = {}
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_abstract_duplicate_parameters():
-    term = Abstract(
-        parameters=["x", "x"],
-        body=Immediate(value=0),
-    )
-
-    context: Context = {}
-
-    with pytest.raises(ValueError):
-        check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_apply():
-    term = Apply(
-        target=Reference(name="x"),
-        arguments=[Immediate(value=0)],
-    )
-
-    context: Context = {
-        "x": None,
-    }
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_immediate():
-    term = Immediate(value=0)
-
-    context: Context = {}
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_primitive():
-    term = Primitive(
-        operator="+",
-        left=Immediate(value=1),
-        right=Immediate(value=2),
-    )
-
-    context: Context = {}
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_branch():
-    term = Branch(
-        operator="<",
-        left=Immediate(value=1),
-        right=Immediate(value=2),
-        consequent=Immediate(value=0),
-        otherwise=Immediate(value=1),
-    )
-
-    context: Context = {}
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_allocate():
-    term = Allocate(count=0)
-
-    context: Context = {}
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_load():
-    term = Load(
-        base=Reference(name="x"),
-        index=0,
-    )
-
-    context: Context = {
-        "x": None,
-    }
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_store():
-    term = Store(
-        base=Reference(name="x"),
-        index=0,
-        value=Immediate(value=0),
-    )
-
-    context: Context = {
-        "x": None,
-    }
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_term_begin():
-    term = Begin(
-        effects=[Immediate(value=0)],
-        value=Immediate(value=0),
-    )
-
-    context: Context = {}
-
-    check_term(term, context)
-
-
-@pytest.mark.skip
-def test_check_program():
-    program = Program(
-        parameters=[],
-        body=Immediate(value=0),
-    )
-
-    check_program(program)
-
-
-@pytest.mark.skip
-def test_check_program_duplicate_parameters():
-    program = Program(
-        parameters=["x", "x"],
-        body=Immediate(value=0),
-    )
-
-    with pytest.raises(ValueError):
-        check_program(program)
 
 def test_check_term_let():
     term = Let(
@@ -357,4 +107,160 @@ def test_check_letrec_binding_exists():
 
     context = Context = {}
     check_term(term, context)
+
+def test_check_abstract_duped():
+    term = Abstract(
+        parameters = [
+            "x", 
+            "x"
+        ],
+        body=Immediate(value=0)
+    )
+
+    context : Context = {}
+    with pytest.raises(ValueError):
+        check_term(term, context)
+
+def test_check_abstract_bound():
+    term = Abstract(
+        parameters = [
+            "x", 
+            "y"
+        ],
+        body=Immediate(value=0)
+    )
+
+    context : Context = {}
+    check_term(term, context)
+
+def test_check_apply_args_invalid():
+    term = Apply(
+        target = Reference(name="x"),
+        arguments = [
+            Immediate(value=0),
+            Reference(name="y")
+        ],
+    )
+
+    context : Context = {
+        "x" : None,
+    }
+    with pytest.raises(ValueError):
+        check_term(term, context)
+
+def test_check_apply_bound():
+    term = Apply(
+        target = Reference(name="x"),
+        arguments = [
+            Immediate(value=0),
+        ]
+    )
+
+    context : Context = {
+        "x" : None,
+    }
+    check_term(term, context)
+
+def test_check_apply_target_invalid():
+    term = Apply(
+        target = Reference(name="x"),
+        arguments = [
+            Immediate(value=0),
+        ],
+    )
+
+    context : Context = {}
+    with pytest.raises(ValueError):
+        check_term(term, context)
+
+def test_check_immediate_pass():
+    term = Immediate(
+        value=0    
+    )
+
+    context : Context = {}
+    check_term(term, context)
+
+def test_check_primitive_pass():
+    term = Primitive(
+        operator="+",
+        left=Immediate(value=0),
+        right=Immediate(value=1)
+    )
+
+    context : Context = {}
+    check_term(term, context)
+
+def test_check_primitive_left_fail():
+    term = Primitive(
+        operator="+",
+        left=Reference(name="x"),
+        right=Immediate(value=1)
+    )
+
+    context : Context = {}
+    with pytest.raises(ValueError):
+        check_term(term, context)
+
+def test_check_branch_pass():
+    term = Branch(
+        left=Immediate(value=0),
+        right=Immediate(value=1),
+        consequent=Immediate(value=2),
+        otherwise=Immediate(value=3)
+    )
+
+    context : Context = {
+        "z" : None
+    }
+    check_term(term, context)
+
+def test_check_branch_one_invalid():
+    term = Branch(
+        left=Reference(name="z"),
+        right=Reference(name="x"),
+        consequent=Immediate(value=2),
+        otherwise=Immediate(value=3)
+    )
+
+    context : Context = {
+        "z" : None
+    }
+    with pytest.raises(ValueError):
+        check_term(term, context)
+
+def test_check_allocate_pass():
+    term = Allocate(
+        count=1,
+    )
+
+    context : Context = {
+        "z" : None
+    }
+    check_term(term, context)
+
+def test_check_load_pass_z():
+    term = Load(
+        base=Reference(name="z"),
+        index=1,
+    )
+
+    context : Context = {
+        "z" : None
+    }
+    check_term(term, context)
+
+def test_check_store_value_invalid():
+    term = Store(
+        base=Reference(name="z"),
+        value=Reference(name="c"),
+        index=1,
+    )
+
+    context : Context = {
+        "z" : None
+    }
+    with pytest.raises(ValueError):
+        check_term(term, context)
+
 
