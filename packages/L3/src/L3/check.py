@@ -58,8 +58,6 @@ def check_term(
         case Reference(name=name):
             if name not in context:
                 raise ValueError(f"unknown variable: {name}")
-
-        case Abstract(parameters=parameters, body=body):
             counts = Counter(parameters)
             duplicates = {name for name, count in counts.items() if count > 1}
             if duplicates:
