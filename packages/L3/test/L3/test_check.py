@@ -56,7 +56,7 @@ def test_check_term_let():
     
     # Remember that context in this case is the context for this term. Aka any arguments already stated before this term
     # In other words, declared variables before this variable
-    context = Context = {
+    context : Context = {
         "y" : None,
     }
 
@@ -71,7 +71,7 @@ def test_check_let_not_bound():
         body=Reference(name="y")
     )
 
-    context = Context = {}
+    context : Context = {}
     with pytest.raises(ValueError):
         check_term(term, context)
 
@@ -84,7 +84,7 @@ def test_check_let_duped():
         body=Reference(name="x")
     )
 
-    context = Context = {
+    context : Context = {
         "x" : None,
     }
 
@@ -100,7 +100,7 @@ def test_check_letrec_duped():
         body=Reference(name="x")
     )
 
-    context = Context = {}
+    context : Context = {}
 
     with pytest.raises(ValueError):
         check_term(term, context)
@@ -114,7 +114,7 @@ def test_check_letrec_binding_exists():
         body=Reference(name="y")
     )
 
-    context = Context = {}
+    context : Context = {}
     check_term(term, context)
 
 def test_check_abstract_duped():
