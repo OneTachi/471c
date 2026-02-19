@@ -1,6 +1,5 @@
 import pytest
-from L3.check import Context, check_program, check_term
-from L3.check import Context, check_term
+from L3.check import Context, check_term, check_program
 from L3.syntax import (
     Reference,
     Abstract, 
@@ -17,6 +16,16 @@ from L3.syntax import (
     Reference,
     Store,
 )
+
+def test_check_begin_bound():
+    term = Begin(
+        effects=[Immediate(value=0)],
+        value=Immediate(value=1)
+    )
+
+    context : Context = {}
+
+    check_term(term, context)
 
 def test_check_reference_bound():
     term = Reference(name="x")
@@ -204,6 +213,7 @@ def test_check_primitive_left_fail():
 
 def test_check_branch_pass():
     term = Branch(
+        operator="==",
         left=Immediate(value=0),
         right=Immediate(value=1),
         consequent=Immediate(value=2),
@@ -217,6 +227,7 @@ def test_check_branch_pass():
 
 def test_check_branch_one_invalid():
     term = Branch(
+        operator="==",
         left=Reference(name="z"),
         right=Reference(name="x"),
         consequent=Immediate(value=2),
@@ -263,4 +274,19 @@ def test_check_store_value_invalid():
     with pytest.raises(ValueError):
         check_term(term, context)
 
+def test_check_program_duped():
+    program = Program(
+        parameters=["x", "x"],
+        body=Immediate(value=0)
+    )
 
+    with pytest.raises(ValueError):
+        check_program(program)
+
+def test_check_program_bound():
+    program = Program(
+        parameters=["x", "y"],
+        body=Immediate(value=0)
+    )
+
+    check_program(program)
