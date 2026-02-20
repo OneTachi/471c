@@ -75,11 +75,6 @@ def check_term(
             local = dict.fromkeys(parameters, None)
             recur(body, context={**context, **local})
 
-        case Apply(target=target, arguments=arguments):
-            for argument in arguments:
-                recur(argument)
-            recur(target)
-
         # Anything that goes here will be a valid value as its an int
         case Immediate(value=_value): 
             pass
