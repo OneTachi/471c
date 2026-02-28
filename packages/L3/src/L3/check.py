@@ -52,7 +52,7 @@ def check_term(
             local = dict.fromkeys([name for name, _ in bindings])
             for name, value in bindings:
                 # Add additional context from bindings we know are in params
-                recur(body, context={**context, **local})
+                recur(value, context={**context, **local})
            
             check_term(body, context={**context, **local})
 
