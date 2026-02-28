@@ -23,7 +23,7 @@ def eliminate_letrec_term(
                 new_bindings.append((identifier, recur(value)))
 
             local = dict.fromkeys([name for name, _ in bindings])
-            new_context = {k: v for k, v in context.items() if k not in local_names}
+            new_context = {k: v for k, v in context.items() if k not in local}
             new_body = recur(body, context=new_context)
             return L2.Let(bindings=new_bindings, body=new_body)
 

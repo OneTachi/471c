@@ -1,6 +1,5 @@
 from collections import Counter
 from collections.abc import Mapping
-from collections import Counter
 from functools import partial
 
 from .syntax import (
@@ -15,7 +14,6 @@ from .syntax import (
     LetRec,
     Load,
     Primitive,
-    Program,
     Reference,
     Store,
     Term,

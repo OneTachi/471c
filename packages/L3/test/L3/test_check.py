@@ -1,7 +1,6 @@
 import pytest
 from L3.check import Context, check_term, check_program
 from L3.syntax import (
-    Reference,
     Abstract, 
     Allocate,
     Apply,
