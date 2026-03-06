@@ -87,6 +87,50 @@ class AstTransformer(Transformer[Token, Program | Term]):
     ) -> tuple[Identifier, Term]:
         return name, value
 
+    @v_args(inline=True)
+    def reference(
+        self,
+        _reference: Token,
+        name: Identifier
+    ) -> Term:
+        return Reference(name=name)
+
+    @v_args(inline=True)
+    def abstract(self, _abstract: Token, parameters: Sequence[Identifier], body: Term) -> Term:
+        return Abstract(parameters=parameters, body=body)
+
+    @v_args(inline=True)
+    def apply(self, _apply: Token, target: Term, arguments: Sequence[Term]) -> Term:
+        return Apply(target=target, arguments=arguments)
+
+    @v_args(inline=True)
+    def immediate(self, _immediate: Token, value: int) -> Term:
+        return Immediate(value=value)
+
+    @v_args(inline=True)
+    def primitive(self, _primitive: Token, operator: Literal, left: Term, right: Term) -> Term:
+        return Primitive(operator=operator, left=left, right=right)
+
+    @v_args(inline=True)
+    def branch(self, _branch: Token, left: Term, right: Term, consequent: Term, otherwise: Term) -> Term:
+        return Branch(left=left, right=right, consequent=consequent, otherwise=otherwise)
+
+    @v_args(inline=True)
+    def allocate(self, _allocate: Token, count: int) -> Term:
+        return Allocate(count=count)
+    
+    @v_args(inline=True)
+    def load(self, _load: Token, base: Term, index: int) -> Term:
+        return Load(base=base, index=index)
+
+    @v_args(inline=True)
+    def store(self, _store: Token, base: Term, index: int, value: Term) -> Term:
+        return Store(base=base, index=index, value=value)
+    
+    @v_args(inline=True)
+    def begin(self, _begin: Token, effects: Sequence[Term], value: Term) -> Term:
+        return Begin(effects=effects, value=value)
+
 
 def parse_term(source: str) -> Term:
     grammar = Path(__file__).with_name("L3.lark").read_text()
