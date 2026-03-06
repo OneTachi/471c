@@ -9,6 +9,17 @@ from .syntax import (
     Let,
     Program,
     Term,
+    Reference,
+    Abstract,
+    Apply,
+    Immediate,
+    Primitive,
+    Branch,
+    Allocate,
+    Load,
+    Store,
+    Begin,
+    LetRec
 )
 
 
