@@ -16,11 +16,31 @@ term        : let
 
 
 let         : "(" LET "(" bindings ")" term ")"
-
 letrec      : "(" LETREC "(" bindings ")" term ")"
+reference   : "(" REFERENCE "(" name "))" 
+abstract    : "(" ABSTRACT "(" parameters ")" term ")" 
+apply       : "(" APPLY "(" target arguments "))"
+immediate   : "(" IMMEDIATE "(" value "))" 
+primitive   : "(" PRIMITIVE "(" operator "))"
+branch      : "(" BRANCH "(" equiv term term term term"))"
+allocate    : "(" ALLOCATE "(" count "))"
+load        : "(" LOAD "(" term index "))"
+store       : "(" STORE "(" term index term "))"
+begin       : "(" BEGIN "(" effects term "))"
+
 
 bindings    : binding*
 binding     : IDENTIFIER term
+name        : IDENTIFIER
+target      : term
+arguments   : term*
+value       : NAT
+operator    : "+" || "-" || "*"
+equiv       : "==" || "<"
+count       : NAT
+index       : NAT
+effects     : term*
+
 
 PROGRAM.2   : "l3"
 LET.2       : "let"
@@ -28,3 +48,5 @@ LETREC.2    : "letrec"
 LAMBDA.2    : "\\" | "lambda" | "λ"
 
 IDENTIFIER  : /[a-zA-Z_][a-zA-Z0-9_]*/
+NAT         : ^(0|[1-9][0-9]*)$
+
