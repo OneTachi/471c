@@ -29,6 +29,19 @@ def test_parse_let_empty():
 
     assert actual == expected
 
+def test_parse_let_multi_bindings():
+    source = "(let ((x 0) (hi (+ 3 2))) x)"
+
+    expected = Let(
+        bindings=[
+            ("x", Immediate(value=0)), ("hi", Primitive(operator="+", left=Immediate(value=3), right=Immediate(value=2)))
+        ],
+        body=Reference(name="x"),
+    )
+
+    actual = parse_term(source)
+
+    assert actual == expected
 
 def test_parse_let_bindings():
     source = "(let ((x 0)) x)"
@@ -59,6 +72,20 @@ def test_parse_letrec_empty():
     assert actual == expected
 
 
+def test_parse_letrec_multi_bindings():
+    source = "(letrec ((x 0) (hi (+ 3 2))) x)"
+
+    expected = LetRec(
+        bindings=[
+                ("x", Immediate(value=0)), ("hi", Primitive(operator="+", left=Immediate(value=3), right=Immediate(value=2)))
+        ],
+        body=Reference(name="x")
+    )
+    
+    actual = parse_term(source)
+
+    assert actual == expected
+
 def test_parse_letrec_bindings():
     source = "(letrec ((x 0)) x)"
 
@@ -83,7 +110,6 @@ def test_parse_reference():
     )
 
     actual = parse_term(source)
-
     assert actual == expected
 
 
@@ -99,6 +125,19 @@ def test_parse_abstract():
     actual = parse_term(source)
 
     assert actual == expected
+
+def test_parse_abstract_multi():
+    source = "(\\ (x hi there) there)"
+
+    expected = Abstract(
+        parameters=["x", "hi", "there"],
+        body=Reference(name="there"),
+    )
+
+    actual = parse_term(source)
+
+    assert actual == expected
+
 
 
 # Apply
@@ -253,6 +292,18 @@ def test_parse_store():
 
     assert actual == expected
 
+def test_parse_store_non_immediate():
+    source = "(store x 0 z)"
+
+    expected = Store(
+        base=Reference(name="x"),
+        index=0,
+        value=Reference(name="z"),
+    )
+
+    actual = parse_term(source)
+
+    assert actual == expected
 
 def test_parse_begin():
     source = "(begin x)"
