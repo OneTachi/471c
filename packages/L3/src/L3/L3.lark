@@ -17,26 +17,29 @@ term        : let
 
 let         : "(" LET "(" bindings ")" term ")"
 letrec      : "(" LETREC "(" bindings ")" term ")"
-reference   : "(" name ")" 
-abstract    : "(" "\\" "(" parameters ")" term ")" 
-apply       : "(" APPLY "(" target arguments "))"
-immediate   : "(" IMMEDIATE "(" value "))" 
-primitive   : "(" operator term term ")"
-branch      : "(" "if" "(" equiv term term ")" term term ")"
+reference   : name 
+abstract    : "(" LAMBDA "(" parameters ")" term ")" 
+apply       : "(" target arguments ")"
+immediate   : value 
+primitive   : "(" OPERATOR term term ")"
+branch      : "(" "if" "(" EQUIV term term ")" term term ")"
 allocate    : "(" ALLOCATE count ")"
-load        : "(" LOAD "(" term index "))"
-store       : "(" STORE "(" term index term "))"
-begin       : "(" BEGIN "(" effects term "))"
+load        : "(" LOAD term index ")"
+store       : "(" STORE term index term ")"
+begin       : "(" BEGIN effects term ")"
+
+OPERATOR : "+" | "-" | "*"
+EQUIV    : "==" | "<"
 
 
 bindings    : binding*
-binding     : IDENTIFIER term
+binding     : "(" IDENTIFIER term ")"
 name        : IDENTIFIER
 target      : term
 arguments   : term*
 value       : NAT
-operator    : "+" || "-" || "*"
-equiv       : "==" || "<"
+operator    : "+" | "-" | "*"
+equiv       : "==" | "<"
 count       : NAT
 index       : NAT
 effects     : term*
@@ -45,8 +48,17 @@ effects     : term*
 PROGRAM.2   : "l3"
 LET.2       : "let"
 LETREC.2    : "letrec"
+ABSTRACT.2  : "abstract"
+IMMEDIATE.2 : "immediate"
+BRANCH.2    : "branch"
+ALLOCATE.2  : "allocate"
+LOAD.2      : "load"
+STORE.2     : "store"
+BEGIN.2     : "begin"
 LAMBDA.2    : "\\" | "lambda" | "λ"
 
 IDENTIFIER  : /[a-zA-Z_][a-zA-Z0-9_]*/
-NAT         : ^(0|[1-9][0-9]*)$
+NAT         : /0|[1-9][0-9]*/
 
+%import common.WS
+%ignore WS
