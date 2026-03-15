@@ -37,6 +37,28 @@ def constant_folding_term(term: Term, context: Context) -> Term:
                             return Primitive(operator="+", left=right, right=left)
 
                 case "-":
+                    # Note that - operations shouldn't change their order
+                    match left(recur), right(recur):
+                        case Immediate(value=i1), Immediate(value=i2):
+                            return Immediate(value=i1-i2)
+                       
+                       # skip '0, right' case as above handles calculation
+                        case left, Immediate(value=0):
+                            return left
+
                 case "*":
+                    match left(recur), right(recur):
+                        case Immediate(value=i1), Immediate(value=i2):
+                            return Immediate(value=i1*i2)
+
+                        case left, Immediate(value=0):
+                            return Immediate(value=0)
+
+                        case right, Immediate(value=0):
+                            return Immediate(value=0)
+
+                        case left, Immediate() as right:
+                            return Primitive(operator="*", left=right, right=left)
+
 
 
