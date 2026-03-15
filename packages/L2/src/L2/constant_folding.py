@@ -1,3 +1,13 @@
+from collections.abc import Mapping
+from functools import partial
+from .syntax import (
+    Program,
+    Term,
+    Primitive,
+    Branch
+)
+
+type Context = Mapping[Identifier, None]
 
 # As of right now, only needs to do branch and primitive folding! 
 def constant_folding_term(term: Term, context: Context) -> Term:
@@ -59,6 +69,10 @@ def constant_folding_term(term: Term, context: Context) -> Term:
 
                         case left, Immediate() as right:
                             return Primitive(operator="*", left=right, right=left)
+            
+            # Don't do anything for terms not Immediate or Branch
+            case _:
+                return _
 
 
 
