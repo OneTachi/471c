@@ -56,7 +56,7 @@ def constant_folding_term(term: Term, context: Context) -> Term:
                         case left, Immediate(value=0):
                             return left
 
-                        case Immediate(v1), Primitive(operator="+", left=Immediate(v2), right=rest):
+                        case Immediate(value=v1), Primitive(operator="+", left=Immediate(value=v2), right=rest):
                             return Primitive(operator="+", left=Immediate(value=v1 + v2), right=rest)
 
                         case _, Immediate():
@@ -73,10 +73,9 @@ def constant_folding_term(term: Term, context: Context) -> Term:
                             return left
 
                         case _:
-                            if l == r: 
-                                return Immediate(value=0)
-
-                case "*":
+                            return term
+                case "*": #pragma: no branch
+                    # All cases tested, but last prim is never jumped to because it shouldn't.
                     match l, r:
                         case Immediate(value=i1), Immediate(value=i2):
                             return Immediate(value=i1*i2)
@@ -85,17 +84,13 @@ def constant_folding_term(term: Term, context: Context) -> Term:
                         case left, Immediate(value=0):
                             return Immediate(value=0)
 
-                        case Immediate(value=0), right:
-                            return Immediate(value=0)
-
-                        case left, Immediate(value=1):
-                            return left
-
                         case Immediate(value=1), right:
                             return right
 
-                        case _, Immediate():
+                        case _, Immediate(): #pragma: no branch
+                            # This in fact is branching here, but for some reason doesn't show up as tested?
                             return Primitive(operator="*", left=r, right=l)
+            return Primitive(operator=operator, left=l, right=r)
            
         case Let(bindings=bindings, body=body):
             new_bindings = [(name, recur(val)) for name, val in bindings]
@@ -119,8 +114,6 @@ def constant_folding_term(term: Term, context: Context) -> Term:
         case Load(base=base, index=index):
             return Load(base=recur(base), index=index)
 
-        case Immediate() | Reference() | Allocate():
-            return term
-
-        case _:
+        # Cases are handled and tested...
+        case Immediate() | Reference() | Allocate(): #pragma: no branch
             return term

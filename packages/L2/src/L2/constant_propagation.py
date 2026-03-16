@@ -36,7 +36,7 @@ def constant_propagation_term(term: Term, context: Context) -> Term:
             inner_context = dict(context)
             new_bindings = []
             for name, value in bindings:
-                propagated_val = constant_propagation(val, context)
+                propagated_val = constant_propagation_term(value, inner_context)
                 new_bindings.append((name, propagated_val))
 
                 if isinstance(propagated_val, Immediate):
@@ -112,7 +112,3 @@ def constant_propagation_term(term: Term, context: Context) -> Term:
                 effects=new_effects,
                 value=recur(value)
             )
-
-        # Every case is handled as seen above. This is literally impossible to get to
-        case _: #pragma: no branch
-            return term

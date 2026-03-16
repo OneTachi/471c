@@ -70,6 +70,8 @@ def is_pure(term: Term) -> bool:
             return True
         case Primitive(left=left, right=right):
             return is_pure(left) and is_pure(right)
+        case Begin(effects=effects, value=value):
+            return all(is_pure(effect) for effect in effects) and is_pure(value)
         case _:
             return False
 
@@ -85,18 +87,20 @@ def dead_code_elimination(term: Term) -> Term:
             free_vars = get_free_variables(new_body)
 
             new_bindings = []
-            for name, value in bindings:
+            for name, value in reversed(bindings):
                 folded = recur(value)
                 if name not in free_vars and is_pure(folded):
                     continue
                 new_bindings.append((name, folded))
+                free_vars.discard(name)
+                free_vars |= get_free_variables(folded)
 
             if not new_bindings:
                 return new_body
-            return Let(bindings=new_bindings, body=new_body)
+            return Let(bindings=list(reversed(new_bindings)), body=new_body)
         
         case Abstract(parameters=parameters, body=body):
-            return Abstract(parameters, body=recur(body))
+            return Abstract(parameters=parameters, body=recur(body))
 
         case Apply(target=target, arguments=arguments):
             return Apply(
@@ -121,9 +125,16 @@ def dead_code_elimination(term: Term) -> Term:
             )
 
         case Begin(effects=effects, value=value):
+            new_effects = [recur(effect) for effect in effects]
+            new_value = recur(value)
+            
+            optimized_effects = [effect for effect in new_effects if not is_pure(effect)]
+            
+            if not optimized_effects:
+                return new_value
             return Begin(
-                effects=[recur(effect) for effect in effects],
-                value=recur(value)
+                effects=optimized_effects,
+                value=new_value
             )
 
         case Store(base=base, index=index, value=value):
