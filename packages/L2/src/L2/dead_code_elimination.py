@@ -61,7 +61,8 @@ def get_free_variables(term: Term) -> set[Identifier]:
         case Allocate(count=_count):
             return set()
 
-        case Immediate(value=_value):
+        case Immediate(value=_value): #pragma: no branch
+            # Case is expliticly written
             return set()
 
 def is_pure(term: Term) -> bool:
@@ -79,7 +80,7 @@ def dead_code_elimination(term: Term) -> Term:
     recur = partial(dead_code_elimination)
     match term:
         case Branch(operator=operator, left=Immediate(value=i1), right=Immediate(value=i2), consequent=consequent, otherwise=otherwise):
-            res = (i1 < i2) if op == "<" else (i1 == i2)
+            res = (i1 < i2) if operator == "<" else (i1 == i2)
             return recur(consequent if res else otherwise)
 
         case Let(bindings=bindings, body=body):

@@ -102,8 +102,8 @@ def constant_propagation_term(term: Term, context: Context) -> Term:
                 index=index,
                 value=recur(value)
             )
-
-        case Begin(effects=effects, value=value): 
+        # Case is expliticly written
+        case Begin(effects=effects, value=value): #pragma: no branch
             new_effects = []
             for effect in effects:
                 new_effects.append(recur(effect))

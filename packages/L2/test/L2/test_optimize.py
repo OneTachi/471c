@@ -1,5 +1,8 @@
 from L2.optimize import optimize_program
-from L2.dead_code_elimination import dead_code_elimination
+from L2.dead_code_elimination import (
+    dead_code_elimination,
+    get_free_variables
+)
 from L2.constant_propagation import constant_propagation_term
 from L2.constant_folding import constant_folding_term
 from L2.syntax import (
@@ -18,6 +21,55 @@ from L2.syntax import (
     Term,
     Program,
 )
+
+def test_dead_branch_first():
+    # (if (== 4 4) 3 1)
+    term = Branch(
+        operator="==", 
+        left=Immediate(value=4), 
+        right=Immediate(value=4), 
+        consequent=Immediate(value=3), 
+        otherwise=Immediate(value=1)
+    )
+    
+    # The optimizer should return the live branch (consequent)
+    expected = Immediate(value=3)
+    
+    actual = dead_code_elimination(term)
+    
+    assert actual == expected
+
+def test_free_branch():
+    term = Branch(operator="==", left=Immediate(value=4), right=Immediate(value=4), consequent=Immediate(value=3), otherwise=Immediate(value=1))
+    result = set()
+
+    assert get_free_variables(term) == result
+
+
+
+def test_free_prim():
+    term = Primitive(operator="+", left=Immediate(value=4), right=Immediate(value=4))
+    result = set()
+
+    assert get_free_variables(term) == result
+
+def test_free_let_with_actual_free_var():
+    # (let ((hi x)) y) -> Free variables are {"x", "y"}
+    term = Let(
+        bindings=[("hi", Reference(name="x"))], 
+        body=Reference(name="y")
+    )
+    
+    # The result is a set of strings
+    expected = {"x", "y"}
+    
+    assert get_free_variables(term) == expected
+
+def test_free_immed():
+    term = Immediate(value=3)
+    result = set()
+    assert get_free_variables(term) == result
+
 
 def test_folding_sub_goof():
     term = Primitive(operator="-",  left=Reference(name="1"), right=Reference(name="1"))
