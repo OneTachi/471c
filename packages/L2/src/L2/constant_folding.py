@@ -30,23 +30,23 @@ def constant_folding_term(term: Term, context: Context) -> Term:
     recur = partial(constant_folding_term, context=context)
     match term:
         case Branch(operator=operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
-            l = recur(left)
-            r = recur(right)
+            lf = recur(left)
+            rt = recur(right)
             
-            if isinstance(l, Immediate) and isinstance(r, Immediate):
-                res = (l.value < r.value) if operator == "<" else (l.value == r.value)
+            if isinstance(lf, Immediate) and isinstance(rt, Immediate):
+                res = (lf.value < rt.value) if operator == "<" else (lf.value == rt.value)
                 return recur(consequent if res else otherwise)
             
             return Branch(
-                operator=operator, left=l, right=r, consequent=recur(consequent), otherwise=recur(otherwise)
+                operator=operator, left=lf, right=rt, consequent=recur(consequent), otherwise=recur(otherwise)
             )
 
         case Primitive(operator=operator, left=left, right=right):
-            l = recur(left)
-            r = recur(right)
+            lf = recur(left)
+            rt = recur(right)
             match operator: 
                 case "+":
-                    match l, r:
+                    match lf, rt:
                         case Immediate(value=i1), Immediate(value=i2):
                             return Immediate(value=i1+i2)
 
@@ -60,11 +60,11 @@ def constant_folding_term(term: Term, context: Context) -> Term:
                             return Primitive(operator="+", left=Immediate(value=v1 + v2), right=rest)
 
                         case _, Immediate():
-                            return Primitive(operator="+", left=r, right=l)
+                            return Primitive(operator="+", left=rt, right=lf)
 
                 case "-":
                     # Note that - operations shouldn't change their order
-                    match l, r:
+                    match lf, rt:
                         case Immediate(value=i1), Immediate(value=i2):
                             return Immediate(value=i1-i2)
                        
@@ -76,7 +76,7 @@ def constant_folding_term(term: Term, context: Context) -> Term:
                             return term
                 case "*": #pragma: no branch
                     # All cases tested, but last prim is never jumped to because it shouldn't.
-                    match l, r:
+                    match lf, rt:
                         case Immediate(value=i1), Immediate(value=i2):
                             return Immediate(value=i1*i2)
                         
@@ -89,8 +89,8 @@ def constant_folding_term(term: Term, context: Context) -> Term:
 
                         case _, Immediate(): #pragma: no branch
                             # This in fact is branching here, but for some reason doesn't show up as tested?
-                            return Primitive(operator="*", left=r, right=l)
-            return Primitive(operator=operator, left=l, right=r)
+                            return Primitive(operator="*", left=rt, right=lf)
+            return Primitive(operator=operator, left=lf, right=rt)
            
         case Let(bindings=bindings, body=body):
             new_bindings = [(name, recur(val)) for name, val in bindings]

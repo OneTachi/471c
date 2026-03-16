@@ -1,7 +1,8 @@
 from L2.optimize import optimize_program
 from L2.dead_code_elimination import (
     dead_code_elimination,
-    get_free_variables
+    get_free_variables,
+    Context,
 )
 from L2.constant_propagation import constant_propagation_term
 from L2.constant_folding import constant_folding_term
@@ -11,14 +12,12 @@ from L2.syntax import (
     Apply,
     Begin,
     Branch,
-    Identifier,
     Immediate,
     Let,
     Load,
     Primitive,
     Reference,
     Store,
-    Term,
     Program,
 )
 
