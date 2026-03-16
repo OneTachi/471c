@@ -1,25 +1,52 @@
 from collections.abc import Mapping
 from functools import partial
 from .syntax import (
-    Program,
-    Term,
+    Abstract,
+    Allocate,
+    Apply,
+    Begin,
+    Branch,
+    Identifier,
+    Immediate,
+    Let,
+    Load,
     Primitive,
-    Branch
+    Reference,
+    Store,
+    Term,
+    Program,
 )
 
-type Context = Mapping[Identifier, None]
+type Context = Mapping[Identifier, Term]
+
+def constant_folding_program(program: Program) -> Program:
+    return Program(
+        parameters=program.parameters,
+        body=constant_folding_term(program.body, {})
+    )
 
 # As of right now, only needs to do branch and primitive folding! 
 def constant_folding_term(term: Term, context: Context) -> Term:
     recur = partial(constant_folding_term, context=context)
-
     match term:
-        case Branch(operator=_operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
-            pass
-        case Primitive(operator=_operator, left=left, right=right):
+        case Branch(operator=operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
+            l = recur(left)
+            r = recur(right)
+            
+            if isinstance(l, Immediate) and isinstance(r, Immediate):
+                res = (l.value < r.value) if operator == "<" else (l.value == r.value)
+                return recur(consequent if res else otherwise)
+            
+            return Branch(
+                operator=operator, left=l, right=r, consequent=recur(consequent), otherwise=recur(otherwise)
+            )
+
+        case Primitive(operator=operator, left=left, right=right):
+            l = recur(left)
+            r = recur(right)
             match operator: 
                 case "+":
-                    match recur(left), recur(right):
+                    match l, r:
                         case Immediate(value=i1), Immediate(value=i2):
                             return Immediate(value=i1+i2)
 
@@ -28,27 +55,16 @@ def constant_folding_term(term: Term, context: Context) -> Term:
 
                         case left, Immediate(value=0):
                             return left
-                        # We are trying to keep all Immediates to the left as our processing rules
-                        case [
-                            Primitive(operator="+", left=Immediate(value=i1), right=right), 
-                            Primitive(operator="+", left=Immediate(value=i2), right=right)
-                        ]:
-                            return (Primitive( 
-                                operator="+",
-                                left=Immediate(value=i1 + i2),
-                                right=Primitive(
-                                    operator="+",
-                                    left=left,
-                                    right=right,
-                                ),
-                            ))
-                        
-                        case left, Immediate() as right:
-                            return Primitive(operator="+", left=right, right=left)
+
+                        case Immediate(v1), Primitive(operator="+", left=Immediate(v2), right=rest):
+                            return Primitive(operator="+", left=Immediate(value=v1 + v2), right=rest)
+
+                        case _, Immediate():
+                            return Primitive(operator="+", left=r, right=l)
 
                 case "-":
                     # Note that - operations shouldn't change their order
-                    match left(recur), right(recur):
+                    match l, r:
                         case Immediate(value=i1), Immediate(value=i2):
                             return Immediate(value=i1-i2)
                        
@@ -56,23 +72,55 @@ def constant_folding_term(term: Term, context: Context) -> Term:
                         case left, Immediate(value=0):
                             return left
 
+                        case _:
+                            if l == r: 
+                                return Immediate(value=0)
+
                 case "*":
-                    match left(recur), right(recur):
+                    match l, r:
                         case Immediate(value=i1), Immediate(value=i2):
                             return Immediate(value=i1*i2)
-
+                        
+                        # Multiply by 0 case
                         case left, Immediate(value=0):
                             return Immediate(value=0)
 
-                        case right, Immediate(value=0):
+                        case Immediate(value=0), right:
                             return Immediate(value=0)
 
-                        case left, Immediate() as right:
-                            return Primitive(operator="*", left=right, right=left)
-            
-            # Don't do anything for terms not Immediate or Branch
-            case _:
-                return _
+                        case left, Immediate(value=1):
+                            return left
 
+                        case Immediate(value=1), right:
+                            return right
 
+                        case _, Immediate():
+                            return Primitive(operator="*", left=r, right=l)
+           
+        case Let(bindings=bindings, body=body):
+            new_bindings = [(name, recur(val)) for name, val in bindings]
+            return Let(bindings=new_bindings, body=recur(body))
 
+        case Abstract(parameters=parameters, body=body):
+            return Abstract(parameters=parameters, body=recur(body))
+
+        case Apply(target=target, arguments=arguments):
+            return Apply(target=recur(target), arguments=[recur(a) for a in arguments])
+
+        case Begin(effects=effects, value=value):
+            return Begin(
+                effects=[recur(effect) for effect in effects],
+                value=recur(value)
+            )
+
+        case Store(base=base, index=index, value=value):
+            return Store(base=recur(base), index=index, value=recur(value))
+
+        case Load(base=base, index=index):
+            return Load(base=recur(base), index=index)
+
+        case Immediate() | Reference() | Allocate():
+            return term
+
+        case _:
+            return term
