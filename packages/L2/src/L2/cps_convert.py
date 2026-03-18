@@ -15,6 +15,7 @@ def cps_convert_term(
     _terms = partial(cps_convert_terms, fresh=fresh)
 
     match term:
+        # Involves copy
         case L2.Let(bindings=bindings, body=body):
             pass
         
@@ -76,9 +77,28 @@ def cps_convert_term(
                     then=k(tmp)
                 ),
             )
-
+        
+        # Evaluates to a constant value=0, but we could have code that relies on this evaluation.  
         case L2.Store(base=base, index=index, value=value):
-            pass
+            tmp = fresh("t")
+            # Store is really two operations where is stores and gives you a pointer to the 0
+            # But it doesn't actually give you the 0 yet so that's why we have an immediate
+            return _term(
+                base,
+                k=lambda base: _term(
+                    value,
+                    k=lambda value: L1.Store(
+                        base=base,
+                        index=index,
+                        value=value,
+                        then=L1.Immediate(
+                            destination=tmp,
+                            value=0,
+                            then=k(tmp)
+                        ),
+                    )
+                )
+            )
 
         case L2.Begin(effects=effects, value=value):  # pragma: no branch
             # Make sure that effects stay in order.
