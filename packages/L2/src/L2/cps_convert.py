@@ -5,10 +5,10 @@ from L1 import syntax as L1
 
 from L2 import syntax as L2
 
-
+# Need to name all intermediate results
 def cps_convert_term(
     term: L2.Term,
-    k: Callable[[L1.Identifier], L1.Statement],
+    k: Callable[[L1.Identifier], L1.Statement], # A function(name of L1 computation so far) => give us rest of computation
     fresh: Callable[[str], str],
 ) -> L1.Statement:
     _term = partial(cps_convert_term, fresh=fresh)
@@ -17,9 +17,10 @@ def cps_convert_term(
     match term:
         case L2.Let(bindings=bindings, body=body):
             pass
-
+        
+        # Name has been given a value so give k the name so we can return the next steps
         case L2.Reference(name=name):
-            pass
+            return k(name)
 
         case L2.Abstract(parameters=parameters, body=body):
             pass
@@ -28,7 +29,13 @@ def cps_convert_term(
             pass
 
         case L2.Immediate(value=value):
-            pass
+            # Temporary name
+            tmp = fresh("t")
+            return L1.Immediate(
+                destination=tmp, # Our new temp destination
+                value=value,
+                then=k(tmp) # Rest of computation
+            )
 
         case L2.Primitive(operator=operator, left=left, right=right):
             pass
@@ -78,5 +85,5 @@ def cps_convert_program(
         case L2.Program(parameters=parameters, body=body):  # pragma: no branch
             return L1.Program(
                 parameters=parameters,
-                body=_term(body, lambda value: L1.Halt(value=value)),
+                body=_term(body, lambda value: L1.Halt(value=value)), # get name of the answer and do rest of computation
             )
