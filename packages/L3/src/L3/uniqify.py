@@ -95,7 +95,7 @@ def uniqify_term(
         case Apply(target=target, arguments=arguments):
             unique_arguments = []
             for argument in arguments:
-                uniqu_arguments.append(_term(argument))
+                unique_arguments.append(_term(argument))
             return Apply(target=_term(target), arguments=unique_arguments)
 
         # No bindings, just return as is
