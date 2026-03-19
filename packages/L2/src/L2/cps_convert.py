@@ -16,17 +16,17 @@ def cps_convert_term(
 
     match term:
         # Involves copy
-        case L2.Let(bindings=bindings, body=body):
+        case L2.Let(bindings=_bindings, body=_body):
             pass
         
         # Name has been given a value so give k the name so we can return the next steps
         case L2.Reference(name=name):
             return k(name)
 
-        case L2.Abstract(parameters=parameters, body=body):
+        case L2.Abstract(parameters=_parameters, body=_body):
             pass
 
-        case L2.Apply(target=target, arguments=arguments):
+        case L2.Apply(target=_target, arguments=_arguments):
             pass
 
         case L2.Immediate(value=value):
@@ -47,7 +47,7 @@ def cps_convert_term(
                 k=lambda left: _term(
                     right,
                     k=lambda right: L1.Primitive(
-                        destination=tmp # necc for then
+                        destination=tmp, # necc for then
                         operator=operator,
                         left=left,
                         right=right,
@@ -57,11 +57,11 @@ def cps_convert_term(
                 )
             )
 
-        case L2.Branch(operator=operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
+        case L2.Branch(operator=_operator, left=_left, right=_right, consequent=_consequent, otherwise=_otherwise):
             pass
         
         # Similar to Reference
-        case L2.Allocate(count=count):
+        case L2.Allocate(count=_count):
             pass
 
         # Similar to Primitive
