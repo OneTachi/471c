@@ -50,9 +50,26 @@ def uniqify_term(
 
             return Let(bindings=unique_bindings, body=new_body)
 
-        
+        # LetRec is similar to Let, but each binding should have the new context + prev binding        
         case LetRec(bindings=bindings, body=body):
-            pass
+            unique_bindings = []
+            updated_context = dict(context)
+            tmp_names = []
+            
+            # Establish new bindings through the context!
+            for name, _ in bindings:
+                new_name = fresh(name)
+                tmp_names.append(new_name)
+                updated_context[name] = new_name
+
+            # Let new context pass through the bindings
+            for unique_name, (_, binding) in zip(tmp_names, bindings):
+                unique_value = uniqify_term(binding, updated_context, fresh)
+                unique_bindings.append((unique_name, unique_value))
+
+            new_body = uniqify_term(body, updated_context, fresh)
+            return LetRec(bindings=unique_bindings, body=new_body)
+
         
         # If a name exists in the context, bind it to that unique variable
         case Reference(name=name):
