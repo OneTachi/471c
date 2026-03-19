@@ -133,7 +133,7 @@ def uniqify_term(
             unique_effects = []
             for effect in effects:
                 unique_effects.append(_term(effect))
-            return Begin(effects=unique_effects, _term(value))
+            return Begin(effects=unique_effects, value=_term(value))
 
 
 def uniqify_program(
