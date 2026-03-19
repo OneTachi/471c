@@ -1,4 +1,4 @@
-from L3.syntax import Apply, Immediate, Let, Reference
+from L3.syntax import Apply, Immediate, Let, Reference, Allocate, Load, Store, LetRec, Abstract, Primitive, Branch, Begin
 from L3.uniqify import Context, uniqify_term
 from util.sequential_name_generator import SequentialNameGenerator
 
@@ -57,5 +57,38 @@ def test_uniqify_term_let():
             ],
         ),
     )
+
+    assert actual == expected
+
+def test_uniqify_term_allocate():
+    term = Allocate(count=5)
+
+    context: Context = {"x": "y"}
+    fresh = SequentialNameGenerator()
+    actual = uniqify_term(term, context, fresh=fresh)
+
+    expected = Allocate(count=5)
+
+    assert actual == expected
+
+def test_uniqify_term_load():
+    term = Load(base=Reference(name="x"), index=5)
+
+    context: Context = {"x": "z"}
+    fresh = SequentialNameGenerator()
+    actual = uniqify_term(term, context, fresh=fresh)
+
+    expected = Load(base=Reference(name="z"), index=5)
+
+    assert actual == expected
+
+def test_uniqify_term_store():
+    term = Store(base=Reference(name="x"), index=5, value=Reference(name="t"))
+
+    context: Context = {"x": "z", "t": "bh"}
+    fresh = SequentialNameGenerator()
+    actual = uniqify_term(term, context, fresh=fresh)
+
+    expected = Store(base=Reference(name="z"), index=5, value=Reference(name="bh"))
 
     assert actual == expected
