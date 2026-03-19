@@ -31,9 +31,26 @@ def uniqify_term(
     _term = partial(uniqify_term, context=context, fresh=fresh)
 
     match term:
+        # Creates bindings that must be uniquified, and represented in a new context!
         case Let(bindings=bindings, body=body):
-            pass
+            unique_bindings = []
+            for name, value in bindings:
+                # Get unique name and iterator on term!
+                unique_name = fresh(name)
+                unique_value = _term(value)
+                unique_bindings.append((unique_name, unique_value))
+            
+            updated_context = dict(context)
+            for (orig_name, _), (new_name, _) in zip(bindings, unique_bindings):
+                # Just like in the tests.
+                # Grab from context to __get the binding name__ in which we retrieve the value
+                updated_context[orig_name] = new_name
+            
+            new_body = uniqify_term(body, updated_context, fresh) 
 
+            return Let(bindings=unique_bindings, body=new_body)
+
+        
         case LetRec(bindings=bindings, body=body):
             pass
         
