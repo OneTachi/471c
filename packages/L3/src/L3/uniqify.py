@@ -36,9 +36,11 @@ def uniqify_term(
 
         case LetRec(bindings=bindings, body=body):
             pass
-
+        
+        # If a name exists in the context, bind it to that unique variable
         case Reference(name=name):
-            pass            
+            real_name = context[name]
+            return Reference(name=real_name)
 
         case Abstract(parameters=parameters, body=body):
             pass
