@@ -2,6 +2,40 @@ from L3.syntax import Apply, Immediate, Let, Reference, Allocate, Load, Store, L
 from L3.uniqify import Context, uniqify_term
 from util.sequential_name_generator import SequentialNameGenerator
 
+def test_uniqify_term_letrec():
+    term = LetRec(
+        bindings=[
+            ("x", Immediate(value=1)),
+            ("y", Reference(name="x")),
+            ("z", Reference(name="y"))
+        ],
+        body=Apply(
+            target=Reference(name="x"),
+            arguments=[
+                Reference(name="y"),
+            ],
+        ),
+    )
+
+    context: Context = {"x": "y"}
+    fresh = SequentialNameGenerator()
+    actual = uniqify_term(term, context, fresh)
+
+    expected = LetRec(
+        bindings=[
+            ("x0", Immediate(value=1)),
+            ("y0", Reference(name="x0")),
+            ("z0", Reference(name="y0"))
+        ],
+        body=Apply(
+            target=Reference(name="x0"),
+            arguments=[
+                Reference(name="y0"),
+            ],
+        ),
+    )
+    
+    assert actual == expected
 
 def test_uniqify_term_reference():
     term = Reference(name="x")
@@ -92,3 +126,4 @@ def test_uniqify_term_store():
     expected = Store(base=Reference(name="z"), index=5, value=Reference(name="bh"))
 
     assert actual == expected
+
