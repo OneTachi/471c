@@ -47,7 +47,7 @@ To keep the codebase consistent and maintainable, please follow these formatting
 We use ruff (via UV) to enforce code style and linting rules: See pyproject.toml for the configuration. A pre-commit hook runs ruff automatically and will prevent commits of poor quality code. You can have ruff automatically fix issues by running the following from the project root.
 
 ```bash
-uv run ruff fix .
+uv run ruff check .
 ```
 
 However, if you're using VS Code, you should install the project's recommended extensions. If you do so, the provided configuration in .vscode/settings.json will reformat on save.
