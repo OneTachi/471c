@@ -1,6 +1,77 @@
-from L3.syntax import Apply, Immediate, Let, Reference, Allocate, Load, Store, LetRec, Abstract, Primitive, Branch, Begin
-from L3.uniqify import Context, uniqify_term
+from L3.syntax import Apply, Immediate, Let, Reference, Allocate, Load, Store, LetRec, Abstract, Primitive, Branch, Begin, Program
+from L3.uniqify import Context, uniqify_term, uniqify_program
 from util.sequential_name_generator import SequentialNameGenerator
+
+def test_uniqify_program():
+    program = Program(
+        parameters=["x"],
+        body=Immediate(value=5)
+    )
+    
+    actual = uniqify_program(program)
+    expected = Program(
+        parameters=["x0"],
+        body=Immediate(value=5)
+    )
+
+    assert actual == expected
+
+def test_uniqify_term_begin():
+    term = Begin(
+        effects=[Reference(name="t")],
+        value=Reference(name="x")
+    )
+
+    context: Context = {"x": "z", "t": "bh"}
+    fresh = SequentialNameGenerator()
+    actual = uniqify_term(term, context, fresh=fresh)
+
+    expected = Begin(
+        effects=[Reference(name="bh")],
+        value=Reference(name="z")
+    )
+
+    assert actual == expected
+
+def test_uniqify_term_branch():
+    term = Branch(operator="==", left=Reference(name="x"), right=Reference(name="t"), consequent=Reference(name="t"), otherwise=Reference(name="t"))
+
+    context: Context = {"x": "z", "t": "bh"}
+    fresh = SequentialNameGenerator()
+    actual = uniqify_term(term, context, fresh=fresh)
+
+    expected = Branch(operator="==", left=Reference(name="z"), right=Reference(name="bh"), consequent=Reference(name="bh"), otherwise=Reference(name="bh"))
+
+    assert actual == expected
+
+def test_uniqify_term_primitive():
+    term = Primitive(operator="-", left=Reference(name="x"), right=Reference(name="t"))
+
+    context: Context = {"x": "z", "t": "bh"}
+    fresh = SequentialNameGenerator()
+    actual = uniqify_term(term, context, fresh=fresh)
+
+    expected = Primitive(operator="-", left=Reference(name="z"), right=Reference(name="bh"))
+
+    assert actual == expected
+
+
+def test_uniqify_term_abstract():
+    term = Abstract(
+        parameters=["x", "y", "z"],
+        body=Reference(name="x")
+    )
+
+    context: Context = {"y": "yoohoo!"}
+    fresh = SequentialNameGenerator()
+    actual = uniqify_term(term, context, fresh)
+
+    expected = Abstract(
+        parameters=["x0", "y0", "z0"],
+        body=Reference(name="x0")
+    )
+
+    assert actual == expected
 
 def test_uniqify_term_letrec():
     term = LetRec(

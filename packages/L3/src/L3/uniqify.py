@@ -85,7 +85,7 @@ def uniqify_term(
             for parameter in parameters:
                 unique_parameter = fresh(parameter)
                 unique_parameters.append(unique_parameter)
-                updated_context[parameter] = updated_parameter
+                updated_context[parameter] = unique_parameter
 
             new_body = uniqify_term(body, updated_context, fresh)
             return Abstract(parameters=unique_parameters, body=new_body)
