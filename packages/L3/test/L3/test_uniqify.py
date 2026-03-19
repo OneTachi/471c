@@ -8,7 +8,7 @@ def test_uniqify_program():
         body=Immediate(value=5)
     )
     
-    actual = uniqify_program(program)
+    fresh, actual = uniqify_program(program)
     expected = Program(
         parameters=["x0"],
         body=Immediate(value=5)
