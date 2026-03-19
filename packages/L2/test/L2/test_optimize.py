@@ -19,10 +19,10 @@ from L2.syntax import (
     Store,
     Program,
 )
-rom collections.abc import Mapping
+#from collections.abc import Mapping
 
-type ContextProp = Mapping[Identifier, Immediate]
-type ContextFolding = Mapping[Identifier, Term]
+#type ContextProp = Mapping[Identifier, Immediate]
+#type ContextFolding = Mapping[Identifier, Term]
 
 def test_dead_branch_first():
     # (if (== 4 4) 3 1)
@@ -76,67 +76,67 @@ def test_free_immed():
 def test_folding_sub_goof():
     term = Primitive(operator="-",  left=Reference(name="1"), right=Reference(name="1"))
     result = Primitive(operator="-", left=Reference(name="1"), right=Reference(name="1"))
-    context : ContextFolding = {}
+    context = {}
     assert constant_folding_term(term, context) == result
 
 def test_folding_mult_goof():
     term = Primitive(operator="*",  left=Reference(name="1"), right=Reference(name="1"))
     result = Primitive(operator="*", left=Reference(name="1"), right=Reference(name="1"))
-    context : ContextFolding = {}
+    context = {}
     assert constant_folding_term(term, context) == result
 
 
 def test_folding_mult_swap():
     term = Primitive(operator="*",  left=Reference(name="1"), right=Immediate(value=5))
     result = Primitive(operator="*", left=Immediate(value=5), right=Reference(name="1"))
-    context : ContextFolding = {}
+    context = {}
     assert constant_folding_term(term, context) == result
 
 def test_folding_mult_ones():
     term = Primitive(operator="*", left=Immediate(value=1), right=Immediate(value=2))
     result = Immediate(value=2)
-    context : ContextFolding = {}
+    context = {}
     assert constant_folding_term(term, context) == result
     
     term = Primitive(operator="*", left=Immediate(value=2), right=Immediate(value=1))
     result = Immediate(value=2)
-    context : ContextFolding = {}
+    context = {}
     assert constant_folding_term(term, context) == result
 
 def test_folding_left_zero():
     term = Primitive(operator="*", left=Immediate(value=0), right=Immediate(value=2))
     result = Immediate(value=0)
-    context : ContextFolding = {}
+    context = {}
     assert constant_folding_term(term, context) == result
 
 def test_folding_mult_norm():
     term = Primitive(operator="*", left=Immediate(value=2), right=Immediate(value=2))
     result = Immediate(value=4)
-    context : ContextFolding = {}
+    context = {}
     assert constant_folding_term(term, context) == result
 
 def test_sub_normal():
     term = Primitive(operator="-", left=Immediate(value=2), right=Immediate(value=1))
     result = Immediate(value=1)
-    context : ContextFolding = {}
+    context = {}
     assert constant_folding_term(term, context) == result
 
 def test_folding_sub_same():
     term = Primitive(operator="-", left=Immediate(value=1), right=Immediate(value=1))
     result = Immediate(value=0)
-    context : ContextFolding = {}
+    context = {}
     assert constant_folding_term(term, context) == result
 
 def test_folding_last_case():
     term = Reference(name="x")
     result = Reference(name="x")
-    context : ContextFolding = {}
+    context = {}
     assert constant_folding_term(term, context) == result
 
 def test_folding_ret_0():
     term = Primitive(operator="+", left=Immediate(value=0), right=Reference(name="x"))
     result = Reference(name="x")
-    context : ContextFolding = {}
+    context = {}
 
     assert constant_folding_term(term, context) == result
 
@@ -146,7 +146,7 @@ def test_folding_ret_0():
 def test_propagation_begin():
     term = Begin(effects=[Immediate(value=3)], value=Immediate(value=1))
     result = Begin(effects=[Immediate(value=3)], value=Immediate(value=1))
-    context : ContextProp = {}
+    context = {}
 
     assert constant_propagation_term(term, context) == result
 
