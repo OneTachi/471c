@@ -75,9 +75,21 @@ def uniqify_term(
         case Reference(name=name):
             real_name = context[name]
             return Reference(name=real_name)
-
+        
+        # Basically Let/LetRec
         case Abstract(parameters=parameters, body=body):
-            pass
+            unique_parameters = []
+            updated_context = dict(context)
+            
+            # No bindings! So no updating a corresponding binding.
+            for parameter in parameters:
+                unique_parameter = fresh(parameter)
+                unique_parameters.append(unique_parameter)
+                updated_context[parameter] = updated_parameter
+
+            new_body = uniqify_term(body, updated_context, fresh)
+            return Abstract(parameters=unique_parameters, body=new_body)
+
         
         # Same case as Begin
         case Apply(target=target, arguments=arguments):
