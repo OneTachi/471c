@@ -42,9 +42,13 @@ def uniqify_term(
 
         case Abstract(parameters=parameters, body=body):
             pass
-
+        
+        # Same case as Begin
         case Apply(target=target, arguments=arguments):
-            pass
+            unique_arguments = []
+            for argument in arguments:
+                uniqu_arguments.append(_term(argument))
+            return Apply(target=_term(target), arguments=unique_arguments)
 
         # No bindings, just return as is
         case Immediate(value=value):
@@ -76,8 +80,12 @@ def uniqify_term(
         case Store(base=base, index=index, value=value):
             return Store(base=_term(base), index=index, value=_term(value))
 
+        # Go over each effect and value to find bindings
         case Begin(effects=effects, value=value):  # pragma: no branch
-            pass
+            unique_effects = []
+            for effect in effects:
+                unique_effects.append(_term(effect))
+            return Begin(effects=unique_effects, _term(value))
 
 
 def uniqify_program(
