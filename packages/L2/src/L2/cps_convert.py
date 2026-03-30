@@ -84,7 +84,21 @@ def cps_convert_term(
             )
 
         case L2.Branch(operator=_operator, left=_left, right=_right, consequent=_consequent, otherwise=_otherwise):
-            pass
+            return _term(
+                left,
+                lambda left: _term(
+                    right,
+                    lambda right: L1.Branch(
+                        operator=operator,
+                        left=left,
+                        right=right,
+                        then=_term(consequent, lambda consequent: L1.Apply(
+                            
+                        )),
+                        otherwise=_term(otherwise, k)
+                    )
+                )
+            )
         
         # Similar to Reference
         case L2.Allocate(count=_count):
