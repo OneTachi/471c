@@ -17,17 +17,43 @@ def cps_convert_term(
     match term:
         # Involves copy
         case L2.Let(bindings=_bindings, body=_body):
-            pass
+            result = _term(body, k)
+
+            for name, value in reversed(bindings):
+                 result = _term(value, lambda value: L1.Copy(destination=name, source=value, then=result))
+
+            return result
         
         # Name has been given a value so give k the name so we can return the next steps
         case L2.Reference(name=name):
             return k(name)
 
         case L2.Abstract(parameters=_parameters, body=_body):
-            pass
-
+            tmp = fresh("t")
+            c = fresh("c")
+            return L1.Abstract(
+                destination=tmp,
+                parameters=[*parameters, c],
+                body=_term(body, lambda body: L1.Apply(target=c, arguments=[body])),
+                then=k(tmp)
+            )
+        
+        # This doesn't have a then. So we need to support it in another way, we need to make an abstraction since we need an identifier
         case L2.Apply(target=_target, arguments=_arguments):
-            pass
+            c = fresh("t")
+            tmp = fresh("t")
+            return L1.Abstract(
+                destination=k,
+                parameters=[tmp],
+                body=k(tmp), 
+                then= _term(
+                    target=target,
+                    lambda target: _terms(
+                        target=target,
+                        arguments=[*arguments, c],
+                    ),
+                )
+            )
 
         case L2.Immediate(value=value):
             # Temporary name (not given like in reference!)
