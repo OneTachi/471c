@@ -84,19 +84,30 @@ def cps_convert_term(
             )
 
         case L2.Branch(operator=_operator, left=_left, right=_right, consequent=_consequent, otherwise=_otherwise):
-            return _term(
-                left,
-                lambda left: _term(
-                    right,
-                    lambda right: L1.Branch(
-                        operator=operator,
-                        left=left,
-                        right=right,
-                        then=_term(consequent, lambda consequent: L1.Apply(
-                            target=,
-                            arguments=
-                        )),
-                        otherwise=_term(otherwise, k)
+            t = fresh("t")
+            j = fresh("j")
+
+            return L1.Abstract(
+                destination=j,
+                parameters=[t],
+                body=k(t),
+                then=_term(
+                    left,
+                    lambda left: _term(
+                        right,
+                        lambda right: L1.Branch(
+                            operator=operator,
+                            left=left,
+                            right=right,
+                            then=_term(consequent, lambda consequent: L1.Apply(
+                                target=j,
+                                arguments=[consequent]
+                            )),
+                            otherwise=_term(otherwise, lambda otherwise: L1.Apply(
+                                target=j,
+                                arguments=[otherwise]
+                            )
+                        )
                     )
                 )
             )
