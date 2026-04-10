@@ -1,9 +1,9 @@
 from collections.abc import Callable, Sequence
 from functools import partial
 
+from L2 import syntax as L2
 from L1 import syntax as L1
 
-from L2 import syntax as L2
 
 # Need to name all intermediate results and make control flow explicit
 def cps_convert_term(
@@ -30,7 +30,7 @@ def cps_convert_term(
 
         case L2.Abstract(parameters=parameters, body=body):
             tmp = fresh("t")
-            c = fresh("c")
+            c = fresh("k")
             return L1.Abstract(
                 destination=tmp,
                 parameters=[*parameters, c],
@@ -40,18 +40,21 @@ def cps_convert_term(
         
         # This doesn't have a then. So we need to support it in another way, we need to make an abstraction since we need an identifier
         case L2.Apply(target=target, arguments=arguments):
-            c = fresh("t")
+            c = fresh("k")
             tmp = fresh("t")
             return L1.Abstract(
-                destination=k,
+                destination=c,
                 parameters=[tmp],
                 body=k(tmp), 
                 then= _term(
                     target,
-                    lambda target: _terms(
-                        target=target,
-                        arguments=[*arguments, c],
-                    ),
+                    lambda target_id: _terms(
+                        arguments,
+                        lambda args_id: L1.Apply(
+                            target=target_id,
+                            arguments=[*args_id, c],
+                        )
+                    )
                 )
             )
 
