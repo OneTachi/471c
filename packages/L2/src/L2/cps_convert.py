@@ -16,7 +16,7 @@ def cps_convert_term(
 
     match term:
         # Involves copy
-        case L2.Let(bindings=_bindings, body=_body):
+        case L2.Let(bindings=bindings, body=body):
             result = _term(body, k)
 
             for name, value in reversed(bindings):
@@ -28,7 +28,7 @@ def cps_convert_term(
         case L2.Reference(name=name):
             return k(name)
 
-        case L2.Abstract(parameters=_parameters, body=_body):
+        case L2.Abstract(parameters=parameters, body=body):
             tmp = fresh("t")
             c = fresh("c")
             return L1.Abstract(
@@ -39,7 +39,7 @@ def cps_convert_term(
             )
         
         # This doesn't have a then. So we need to support it in another way, we need to make an abstraction since we need an identifier
-        case L2.Apply(target=_target, arguments=_arguments):
+        case L2.Apply(target=target, arguments=arguments):
             c = fresh("t")
             tmp = fresh("t")
             return L1.Abstract(
@@ -47,7 +47,7 @@ def cps_convert_term(
                 parameters=[tmp],
                 body=k(tmp), 
                 then= _term(
-                    target=target,
+                    target,
                     lambda target: _terms(
                         target=target,
                         arguments=[*arguments, c],
@@ -83,7 +83,7 @@ def cps_convert_term(
                 )
             )
 
-        case L2.Branch(operator=_operator, left=_left, right=_right, consequent=_consequent, otherwise=_otherwise):
+        case L2.Branch(operator=operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
             t = fresh("t")
             j = fresh("j")
 
@@ -106,14 +106,14 @@ def cps_convert_term(
                             otherwise=_term(otherwise, lambda otherwise: L1.Apply(
                                 target=j,
                                 arguments=[otherwise]
-                            )
+                            )),
                         )
                     )
                 )
             )
         
         # Similar to Reference
-        case L2.Allocate(count=_count):
+        case L2.Allocate(count=count):
             tmp = fresh("t")
             return L1.Allocate(
                 destination=tmp,
