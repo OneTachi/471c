@@ -93,7 +93,8 @@ def cps_convert_term(
                         left=left,
                         right=right,
                         then=_term(consequent, lambda consequent: L1.Apply(
-                            
+                            target=,
+                            arguments=
                         )),
                         otherwise=_term(otherwise, k)
                     )
@@ -102,7 +103,12 @@ def cps_convert_term(
         
         # Similar to Reference
         case L2.Allocate(count=_count):
-            pass
+            tmp = fresh("t")
+            return L1.Allocate(
+                destination=tmp,
+                count=count,
+                then=k(tmp)
+            )
 
         # Similar to Primitive
         case L2.Load(base=base, index=index):
