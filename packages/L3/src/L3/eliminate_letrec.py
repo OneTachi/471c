@@ -14,8 +14,8 @@ def eliminate_letrec_term(
     context: Context,
 ) -> L2.Term:
     recur = partial(eliminate_letrec_term, context=context)
-    #def recur(t: L3.Term, ctx: Context = context) -> L2.Term:
-        #return eliminate_letrec_term(t, ctx)
+    # def recur(t: L3.Term, ctx: Context = context) -> L2.Term:
+    # return eliminate_letrec_term(t, ctx)
     match term:
         case L3.Let(bindings=bindings, body=body):
             new_bindings = []
@@ -36,7 +36,7 @@ def eliminate_letrec_term(
                 new_bindings.append((identifier, L2.Allocate(count=1)))
                 new_val = recur(value, context=local_context)
                 store.append(L2.Store(base=L2.Reference(name=identifier), index=0, value=new_val))
-            
+
             new_body = recur(body, context=local_context)
 
             return L2.Let(bindings=new_bindings, body=L2.Begin(effects=store, value=new_body))
@@ -50,13 +50,12 @@ def eliminate_letrec_term(
             new_context = {k: v for k, v in context.items() if k not in parameters}
             return L2.Abstract(parameters=parameters, body=recur(body, context=new_context))
 
-        case L3.Apply(target=target, arguments=arguments): 
+        case L3.Apply(target=target, arguments=arguments):
             recurred = []
-            for argument in arguments: 
+            for argument in arguments:
                 new_arg = recur(argument)
                 recurred.append(new_arg)
             return L2.Apply(target=recur(target), arguments=recurred)
-
 
         case L3.Immediate(value=value):
             return L2.Immediate(value=value)
@@ -88,7 +87,7 @@ def eliminate_letrec_term(
         case L3.Begin(effects=effects, value=value):  # pragma: no branch
             # Must recur each effect in a new variable
             recurred = []
-            for effect in effects: 
+            for effect in effects:
                 new_effect = recur(effect)
                 recurred.append(new_effect)
 

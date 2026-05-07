@@ -51,9 +51,8 @@ def check_term(
             for name, value in bindings:
                 # Add additional context from bindings we know are in params
                 recur(value, context={**context, **local})
-           
-            check_term(body, context={**context, **local})
 
+            check_term(body, context={**context, **local})
 
         case Reference(name=name):
             if name not in context:
@@ -74,7 +73,7 @@ def check_term(
             recur(body, context={**context, **local})
 
         # Anything that goes here will be a valid value as its an int
-        case Immediate(value=_value): 
+        case Immediate(value=_value):
             pass
 
         case Primitive(operator=_operator, left=left, right=right):
