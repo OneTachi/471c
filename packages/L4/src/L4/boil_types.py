@@ -7,6 +7,24 @@ from . import syntax as L4
 
 type Context = Mapping[L4.Identifier, None]
 
+def boil_program(
+    program: L4.Program,
+    symbol_table: Mapping[L4.Identifer, int],
+) -> tuple[Callable[[str], str], L3.Program]:
+    fresh = SequentialNameGenerator()
+    _term = partial(boil_types, fresh=fresh)
+
+    match program:
+        case Program(parameters=parameters, body=body):  # pragma: no branch
+            local = {parameter: fresh(parameter) for parameter in parameters}
+            return (
+                fresh,
+                L3.Program(
+                    parameters=[local[parameter] for parameter in parameters],
+                    body=_term(body, local),
+                ),
+            )
+
 def boil_types(
     term: L4.Term,
     symbol_table: Mapping[L4.Identifer, int],
