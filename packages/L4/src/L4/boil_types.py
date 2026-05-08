@@ -123,4 +123,9 @@ def boil_types(
         case Load(base=base, index=index):
             return L3.Load(base=recur(base), index=index)
 
-        case Store()
+        case Store(base=base, index=index, value=value):
+            return L3.Store(base=recur(base), index=index, value=recur(value))
+
+        case Begin(effects=effects, value=value):
+            return L3.Begin(value=recur(value), effects=[recur(e) for e in effects])
+            
