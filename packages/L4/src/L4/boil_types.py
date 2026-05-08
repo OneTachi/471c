@@ -23,11 +23,9 @@ def boil_types(
 
         # Boils down into basic integer determined by symbol table 
         case Symbol(name=name):
-            if name in symbol_table:
-                return Immediate(value=symbol_table[name])
-            else:
-                symbol_table[name] = len(table) + 1
-                return Immediate(value=symbol_table[name])
+            if name not in symbol_table:
+                symbol_table[name] = len(table)
+            return L3.Immediate(value=symbol_table[name])
 
         
         # Store all values in memory and make sure reference to is properly set
@@ -39,14 +37,10 @@ def boil_types(
             seq = [
                 L3.Store(
                     base=L3.Reference(name=new_name),
-                    index=0,
-                    value=lowered_values[0]
-                ),
-                L3.Store(
-                    base=L3.Reference(name=new_name),
-                    index=1,
-                    value=lowered_values[1]
+                    index=i,
+                    value=val
                 )
+                for i, val in enumerate(lowered_values)
             ]
 
             return L3.Let(
@@ -63,10 +57,10 @@ def boil_types(
         
         # Similar to Tuple, but sort alphabetically as there is no given order
         case Record(fields=fields):
-            identifiers = [item[0] for item in fields]
-            identifiers.sort() # alphabetical
+            identifiers = [name for name, value in fields]
+            identifiers= sorted(identifiers) # alphabetical
             
-            lowered_fields = [tuple(item[0], recur(item[1])) for item in fields] 
+            lowered_fields = [tuple(name, recur(value)) for name, value in fields] 
             
             ptr = fresh("record")
             seq = [
