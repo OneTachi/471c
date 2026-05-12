@@ -25,6 +25,7 @@ def boil_program(
                 ),
             )
 
+
 def boil_types(
     term: L4.Term,
     symbol_table: Mapping[L4.Identifer, int],
@@ -38,6 +39,16 @@ def boil_types(
                 return L3.Immediate(value=1)
             else:
                 return L3.Immediate(value=0)
+        
+        # Boil everything down into left holding all values. Since we can have just a true or false 
+        case L4.If(condition=condition, consequent=consequent, otherwise=otherwise):
+            return L3.Branch(
+                operator="==",
+                left=recur(condition),
+                right=L3.Immediate(value=1),
+                consequent=recur(consequent),
+                otherwise=recur(otherwise)
+            )
 
         # Boils down into basic integer determined by symbol table 
         case Symbol(name=name):
@@ -99,7 +110,7 @@ def boil_types(
             )
         
         case GetRecordValue(record=record, key=key): #TODO
-            #get_record_type(record)
+            #get_record_type(record) #what type is this basically... will need for inference!
             #coerce(record)
             return L3.Load(base=record, index=index)
 

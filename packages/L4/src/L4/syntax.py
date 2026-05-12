@@ -4,9 +4,15 @@ from typing import Annotated, Literal
 from pydantic import BaseModel, Field
 
 type Identifier = Annotated[str, Field(min_length=1)]
-
 type Nat = Annotated[int, Field(ge=0)]
 
+# Write if too that will go into branch, remember if its just a variable i gotta make that branch/manufacture
+# otherwise no point in boolean
+
+type Type = Annotated[
+    Boolean | Int | Tuple | Record | Symbol | Arrow, 
+    Field(discriminator="tag"),
+]
 
 class Program(BaseModel, frozen=True):
     tag: Literal["l4"] = "l4"
@@ -15,9 +21,15 @@ class Program(BaseModel, frozen=True):
 
 
 type Term = Annotated[
-    Bool | Symbol | Tuple | GetTupleValue | Record | GetRecordValue | Let | Reference | Abstract | Apply | Immediate | Primitive | Branch | Allocate | Load | Store | Begin | LetRec,
+    If | Bool | Symbol | Tuple | GetTupleValue | Record | GetRecordValue | Let | Reference | Abstract | Apply | Immediate | Primitive | Branch | Allocate | Load | Store | Begin | LetRec,
     Field(discriminator="tag"),
 ]
+
+class If(BaseModel, frozen=True):
+    tag: Literal["if"] = "if"
+    condition: Term
+    consequent: Term
+    otherwise Term
 
 class Bool(BaseModel, frozen=True):
     tag: Literal["bool"] = "bool"
