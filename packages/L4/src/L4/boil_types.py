@@ -7,6 +7,17 @@ from . import syntax as L4
 
 type Context = Mapping[L4.Identifier, None]
 
+# Pass to verify program's type safety
+def infer_program(program: L4.Program) -> L4.Type:
+    context = {name: t for name, t in program.parameters}
+    
+    body_type = infer_term(program.body, context)
+    
+    if body_type != program.ret:
+        raise TypeError(f"Program body returns {body_type}. Expected {program.ret}")
+    
+    return program.ret
+
 # Pass that assigns types to everything
 def infer_term(
     term: L4.Term,
@@ -182,26 +193,27 @@ def infer_term(
 
 def boil_program(
     program: L4.Program,
-    context: Mapping[L4.Identifer, int],
-) -> tuple[Callable[[str], str], L3.Program]:
+    symbol_table: Mapping[L4.Identifier, int],
+) -> tuple[SequentialNameGenerator, L3.Program]:
     fresh = SequentialNameGenerator()
     _term = partial(boil_types, fresh=fresh)
+    context = {name: t for name, t in program.parameters}
+    # Use freshness for lowering
+    renamed_params = {name: fresh(name) for name, _ in program.parameters}
+    lowered_params = [renamed_params[name] for name, _ in program.parameters]
+    lowered_context = {renamed_params[name]: t for name, t in program.parameters}
 
-    match program:
-        case Program(parameters=parameters, body=body):  # pragma: no branch
-            local = {parameter: fresh(parameter) for parameter in parameters}
-            return (
-                fresh,
-                L3.Program(
-                    parameters=[local[parameter] for parameter in parameters],
-                    body=_term(body, local),
-                ),
-            )
+    lowered_body = boil_types(term=body, symbol_table=symbol_table, fresh=fresh, context=context)
+
+    return (
+        fresh,
+        L3.Program(parameters=lowered_params, body=lowered_body)
+    )
 
 
 def boil_types(
     term: L4.Term,
-    symbol_table: Mapping[L4.Identifer, int],
+    symbol_table: Mapping[L4.Identifier, int],
     fresh: Callable[[str], str],
     context: Mapping[L4.Identifier, Type]
 ) -> L3.Term:
