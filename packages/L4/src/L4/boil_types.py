@@ -10,12 +10,14 @@ type Context = Mapping[L4.Identifier, None]
 # Infers the corresponding type of a given term or terms. DOES NOT ASSIGN ID
 def infer_term(
     term: L4.Term,
-    id_table: Mapping[L4.Identifier, L4.Type]
+    context: Mapping[L4.Identifier, L4.Type]
 ) -> L4.Type:
-    recur = partial(infer_term, id_table=id_table)
 
     match term:
-        case Immediate(value=value):
+        case Immediate():
+            return Int()
+        
+        case Primitive():
             return Int()
 
         case MakeBool():
@@ -25,9 +27,41 @@ def infer_term(
             return Symbol()
 
         case MakeRecord(fields=fields):
-            return Record()
+            types = {identifier : infer_term(value, context) for identifier, value in fields}
+            return Record(fields=types)
 
         case MakeTuple(values=values):
+            types = [infer_term(value, context) for value in values]
+            return Tuple(values=types)
+
+        # Does variable exist in the context or not basically
+        case Reference(name=name):
+            if name not in context:
+                raise TypeError(f"Undefined variable: {name}")
+            return context[name]
+
+        case GetTupleValue(term=tm, index=index):
+            t = infer_term(tm, context)
+            if not isinstance(t, Tuple):
+                raise TypeError("Not a tuple or nonexistent.")
+            if index >= len(t.values):
+                raise TypeError("Index is too large!")
+            
+            return t.values[index]
+
+        case GetRecordValue(record=rd, key=key):
+            r = infer_term(rd, context)
+
+            if not isinstance(r, Record):
+                raise TypeError("Not a record or nonexistent.")
+
+            if key not in r.fields:
+                raise TypeError("Key doesn't exist in record.")
+
+            return r.fields[key]
+
+        case 
+
 
 
 
