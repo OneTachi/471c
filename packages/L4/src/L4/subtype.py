@@ -1,6 +1,27 @@
 from functools import partial
 
-from .syntax import Identifier, Record, Term, Tuple
+from .syntax import (
+    Abstract,
+    Allocate,
+    Apply,
+    Begin,
+    Bool,
+    Branch,
+    GetRecordValue,
+    GetTupleValue,
+    Identifier,
+    Immediate,
+    Let,
+    LetRec,
+    Load,
+    Primitive,
+    Record,
+    Reference,
+    Store,
+    Symbol,
+    Term,
+    Tuple,
+)
 
 
 # See Turbak. 12.1.2 Dimensions of Subtyping: Subset Semantics versus Coercion Semantics of Subtyping
@@ -29,14 +50,13 @@ def coerce(
             return Record(fields=components)
 
         case Tuple(values=v1), Tuple(values=v2):
+            if len(v2) > len(v1):
+                raise ValueError(f"expected tuple of length {len(v2)}, but got tuple of length {len(v1)}")
+
             new_vals: list[Term] = []
 
-            for val in v2:
-                val_present = [item for item in v1 if equivalent(item, val)]
-                if not val_present:
-                    raise ValueError(f"missing field {val} in {actual}")
-
-                new_vals.append(val)
+            for i in range(len(v2)):
+                new_vals.append(_coerce(v1[i], v2[i]))
 
             return Tuple(values=new_vals)
 
@@ -53,27 +73,84 @@ def equivalent(
             if len(fs1) != len(fs2):
                 return False
 
-            same = True
+            return all(k1 == k2 and equivalent(v1, v2) for (k1, v1), (k2, v2) in zip(fs1, fs2))
 
-            for thing1 in fs1:
-                for thing2 in fs2:
-                    if thing1 != thing2:
-                        same = False
-
-            return same
-
-        case Tuple(values=fs1), Tuple(values=fs2):
-            if len(fs1) != len(fs2):
+        case Tuple(values=v1), Tuple(values=v2):
+            if len(v1) != len(v2):
                 return False
+            return all(equivalent(item1, item2) for item1, item2 in zip(v1, v2))
 
-            same = True
+        case GetTupleValue(term=term1, index=i1), GetTupleValue(term=term2, index=i2):
+            return i1 == i2 and equivalent(term1, term2)
 
-            for thing1 in fs1:
-                for thing2 in fs2:
-                    if thing1 != thing2:
-                        same = False
+        case GetRecordValue(record=r1, key=k1), GetRecordValue(record=r2, key=k2):
+            return k1 == k2 and equivalent(r1, r2)
 
-            return same
+        case Reference(name=n1), Reference(name=n2):
+            return n1 == n2
+
+        case Abstract(parameters=p1, body=b1), Abstract(parameters=p2, body=b2):
+            if len(p1) != len(p2):
+                return False
+            if any(name1 != name2 for name1, name2 in zip(p1, p2)):
+                return False
+            return equivalent(b1, b2)
+
+        case Apply(target=target1, arguments=a1), Apply(target=target2, arguments=a2):
+            if len(a1) != len(a2):
+                return False
+            return equivalent(target1, target2) and all(equivalent(arg1, arg2) for arg1, arg2 in zip(a1, a2))
+
+        case Immediate(value=v1), Immediate(value=v2):
+            return v1 == v2
+
+        case Primitive(operator=o1, left=l1, right=r1), Primitive(operator=o2, left=l2, right=r2):
+            return o1 == o2 and equivalent(l1, l2) and equivalent(r1, r2)
+
+        case Branch(operator=o1, left=l1, right=r1, consequent=c1, otherwise=t1), Branch(
+            operator=o2,
+            left=l2,
+            right=r2,
+            consequent=c2,
+            otherwise=t2,
+        ):
+            return o1 == o2 and equivalent(l1, l2) and equivalent(r1, r2) and equivalent(c1, c2) and equivalent(t1, t2)
+
+        case Allocate(count=c1), Allocate(count=c2):
+            return c1 == c2
+
+        case Load(base=b1, index=i1), Load(base=b2, index=i2):
+            return i1 == i2 and equivalent(b1, b2)
+
+        case Store(base=b1, index=i1, value=v1), Store(base=b2, index=i2, value=v2):
+            return i1 == i2 and equivalent(b1, b2) and equivalent(v1, v2)
+
+        case Begin(effects=e1, value=v1), Begin(effects=e2, value=v2):
+            if len(e1) != len(e2):
+                return False
+            return all(equivalent(effect1, effect2) for effect1, effect2 in zip(e1, e2)) and equivalent(v1, v2)
+
+        case Let(bindings=b1, body=body1), Let(bindings=b2, body=body2):
+            if len(b1) != len(b2):
+                return False
+            for (k1, v1), (k2, v2) in zip(b1, b2):
+                if k1 != k2 or not equivalent(v1, v2):
+                    return False
+            return equivalent(body1, body2)
+
+        case LetRec(bindings=b1, body=body1), LetRec(bindings=b2, body=body2):
+            if len(b1) != len(b2):
+                return False
+            for (k1, v1), (k2, v2) in zip(b1, b2):
+                if k1 != k2 or not equivalent(v1, v2):
+                    return False
+            return equivalent(body1, body2)
+
+        case Bool(value=v1), Bool(value=v2):
+            return v1 == v2
+
+        case Symbol(name=n1), Symbol(name=n2):
+            return n1 == n2
 
         case _:
             return False
