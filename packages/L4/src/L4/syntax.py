@@ -89,7 +89,7 @@ class Let(BaseModel, frozen=True):
 
 class LetRec(BaseModel, frozen=True):
     tag: Literal["letrec"] = "letrec"
-    bindings: Sequence[tuple[Identifier, Term]]
+    bindings: Sequence[tuple[Identifier, Type, Term]]
     body: Term
 
 class Reference(BaseModel, frozen=True):
