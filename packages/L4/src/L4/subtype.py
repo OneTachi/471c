@@ -1,6 +1,6 @@
 from functools import partial
 
-from .syntax import Identifier, Record, Term
+from .syntax import Identifier, Record, Term, Tuple
 
 
 # See Turbak. 12.1.2 Dimensions of Subtyping: Subset Semantics versus Coercion Semantics of Subtyping
@@ -16,7 +16,6 @@ def coerce(
     match actual, expected:
         case Record(fields=fs1), Record(fields=fs2):
             sorted_expected = sorted(fs2)
-            sorted_actual = sorted(fs1)
 
             components: list[tuple[Identifier, Term]] = []
 
@@ -29,6 +28,18 @@ def coerce(
 
             return Record(fields=components)
 
+        case Tuple(values=v1), Tuple(values=v2):
+            new_vals: list[Term] = []
+
+            for val in v2:
+                val_present = [item for item in v1 if equivalent(item, val)]
+                if not val_present:
+                    raise ValueError(f"missing field {val} in {actual}")
+
+                new_vals.append(val)
+
+            return Tuple(values=new_vals)
+
         case _:
             raise ValueError(f"can not convert from {actual} to {expected}")
 
@@ -38,5 +49,31 @@ def equivalent(
     t2: Term,
 ) -> bool:
     match t1, t2:
+        case Record(fields=fs1), Record(fields=fs2):
+            if len(fs1) != len(fs2):
+                return False
+
+            same = True
+
+            for thing1 in fs1:
+                for thing2 in fs2:
+                    if thing1 != thing2:
+                        same = False
+
+            return same
+
+        case Tuple(values=fs1), Tuple(values=fs2):
+            if len(fs1) != len(fs2):
+                return False
+
+            same = True
+
+            for thing1 in fs1:
+                for thing2 in fs2:
+                    if thing1 != thing2:
+                        same = False
+
+            return same
+
         case _:
             return False
