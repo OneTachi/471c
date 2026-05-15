@@ -7,6 +7,32 @@ from . import syntax as L4
 
 type Context = Mapping[L4.Identifier, None]
 
+# Infers the corresponding type of a given term or terms. DOES NOT ASSIGN ID
+def infer_term(
+    term: L4.Term,
+    id_table: Mapping[L4.Identifier, L4.Type]
+) -> L4.Type:
+    recur = partial(infer_term, id_table=id_table)
+
+    match term:
+        case Immediate(value=value):
+            return Int()
+
+        case MakeBool():
+            return Boolean()
+
+        case MakeSymbol():
+            return Symbol()
+
+        case MakeRecord(fields=fields):
+            return Record()
+
+        case MakeTuple(values=values):
+
+
+
+
+
 def boil_program(
     program: L4.Program,
     symbol_table: Mapping[L4.Identifer, int],
@@ -34,7 +60,7 @@ def boil_types(
     recur = partial(boil_types, fresh=fresh, symbol_table=symbol_table)
     match term: 
         # Boils down into 1 or 0 for truth
-        case Bool(value=value):
+        case MakeBool(value=value):
             if value == True:
                 return L3.Immediate(value=1)
             else:
@@ -51,14 +77,14 @@ def boil_types(
             )
 
         # Boils down into basic integer determined by symbol table 
-        case Symbol(name=name):
+        case MakeSymbol(name=name):
             if name not in symbol_table:
                 symbol_table[name] = len(table)
             return L3.Immediate(value=symbol_table[name])
 
         
         # Store all values in memory and make sure reference to is properly set
-        case Tuple(values=values):
+        case MakeTuple(values=values):
             lowered_values = [recur(v) for v in values]
 
             new_name = fresh("tuple")
@@ -85,7 +111,7 @@ def boil_types(
             return L3.Load(recur(term), index=index)
         
         # Similar to Tuple, but sort alphabetically as there is no given order
-        case Record(fields=fields):
+        case MakeRecord(fields=fields):
             identifiers = [name for name, value in fields]
             identifiers= sorted(identifiers) # alphabetical
             

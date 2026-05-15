@@ -14,6 +14,30 @@ type Type = Annotated[
     Field(discriminator="tag"),
 ]
 
+## Type Declarations
+class Boolean(BaseModel, frozen=True):
+    tag: Literal["boolean"] = "boolean"
+
+class Int(BaseModel, frozen=True):
+    tag: Literal["int"] = "int"
+
+class Tuple(BaseModel, frozen=True):
+    tag: Literal["tuple"] = "tuple"
+    values: Sequence[Type]
+
+class Record(BaseModel, frozen=True):
+    tag: Literal["record"] = "record"
+    fields: Mapping[Identifier, Type]
+
+class Symbol(BaseModel, frozen=True):
+    tag: Literal["symbol"] = "symbol"
+
+class Arrow(BaseModel, frozen=True):
+    tag: Literal["arrow"] = "arrow"
+    params: Sequence[Type]
+    ret: Type
+##
+
 class Program(BaseModel, frozen=True):
     tag: Literal["l4"] = "l4"
     parameters: Sequence[Identifier]
@@ -31,15 +55,15 @@ class If(BaseModel, frozen=True):
     consequent: Term
     otherwise Term
 
-class Bool(BaseModel, frozen=True):
+class MaleBool(BaseModel, frozen=True):
     tag: Literal["bool"] = "bool"
     value: bool
 
-class Tuple(BaseModel, frozen=True):
+class MakeTuple(BaseModel, frozen=True):
     tag: Literal["tuple"] = "tuple"
     values: Sequence[Term]
 
-class Symbol(BaseModel, frozen=True):
+class MakeSymbol(BaseModel, frozen=True):
     tag: Literal["symbol"] = "symbol"
     name: Identifier
 
@@ -48,7 +72,7 @@ class GetTupleValue(BaseModel, frozen=True):
     term: Term
     index: Nat
 
-class Record(BaseModel, frozen=True):
+class MakeRecord(BaseModel, frozen=True):
     tag: Literal["record"] = "record"
     fields: Sequence[tuple[Identifier, Term]]
 
