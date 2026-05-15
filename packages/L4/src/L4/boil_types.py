@@ -167,7 +167,7 @@ def infer_term(
             
             return Int()
 
-        case Store(base=base, index=index, value=value)
+        case Store(base=base, index=index, value=value):
             if not isinstance(infer_term(base, context), Int):
                 raise TypeError("Base of Load must be an Int (address)")
             if not isinstance(infer_term(index, context), Int):
@@ -182,7 +182,7 @@ def infer_term(
 
 def boil_program(
     program: L4.Program,
-    symbol_table: Mapping[L4.Identifer, int],
+    context: Mapping[L4.Identifer, int],
 ) -> tuple[Callable[[str], str], L3.Program]:
     fresh = SequentialNameGenerator()
     _term = partial(boil_types, fresh=fresh)
@@ -203,8 +203,9 @@ def boil_types(
     term: L4.Term,
     symbol_table: Mapping[L4.Identifer, int],
     fresh: Callable[[str], str],
+    context: Mapping[L4.Identifier, Type]
 ) -> L3.Term:
-    recur = partial(boil_types, fresh=fresh, symbol_table=symbol_table)
+    recur = partial(boil_types, fresh=fresh, symbol_table=symbol_table, context=context)
     match term: 
         # Boils down into 1 or 0 for truth
         case MakeBool(value=value):
@@ -282,24 +283,48 @@ def boil_types(
                 )
             )
         
-        case GetRecordValue(record=record, key=key): #TODO
-            #get_record_type(record) #what type is this basically... will need for inference!
-            #coerce(record)
-            return L3.Load(base=record, index=index)
+        case GetRecordValue(record=record, key=key):
+            record_type = infer_type(record, context)
+            if not isinstance(record_type, Record):
+                raise TypeError("Term is not type Record")
 
-        ## STANDARD ONES
+            sorted_keys = sorted(record_type.fields.keys())
+            try:
+                index = sorted_keys.index(key)
+            except ValueError:
+                raise TypeError(f"{key} not found in record {record}")
+
+            return L3.Load(base=recur(record), index=index)
 
         case Let(bindings=bindings, body=body):
-            return L3.Let(bindings=[(name, recur(val)) for name, val in bindings], body=recur(body))
+            ctx = dict(context)
+            lowered_bindings = []
+            for name, value in bindings:
+                # Pass type checker
+                ctx[name] = infer_type(value, ctx)
+                lowered_bindings.append((name, recur(value, ctx)))
+            return L3.Let(bindings=lowered_bindings, body=recur(body, ctx))
 
         case LetRec(bindings=bindings, body=body):
-            return L3.LetRec(bindings=[(name, recur(val)) for name, val in bindings], body=recur(body))
+            ctx = dict(context)
+            for name, t, _ in bindings:
+                ctx[name] = t
 
-        case Reference(name=name):
-            return L3.Reference(name=name)
+            lowered_bindings = [(name, recur(value, ctx) for name, _, value in bindings)]
+            return L3.LetRec(bindings=lowered_bindings, body=recur(body, ctx))
 
         case Abstract(parameters=parameters, body=body):
-            return L3.Abstract(parameters=parameters, body=recur(body))
+            ctx = dict(context)
+            lowered_params = []
+            for name, t in parameters:
+                ctx[name] = t
+                lowered_params.append(name)
+
+            return L3.Abstract(parameters=lowered_params, body=recur(body, ctx))
+        
+        ## STANDARD ONES
+        case Reference(name=name):
+            return L3.Reference(name=name)
 
         case Apply(target=target, arguments=arguments):
             return L3.Apply(target=recur(target), arguments=[recur(arg) for arg in arguments])
