@@ -60,6 +60,28 @@ def infer_term(
 
             return r.fields[key]
 
+        case Let(bindings=bindings, body=body):
+            new_context = dict(context)
+            
+            # Ensure our context has types
+            for name, t in bindings:
+                new_context[name] = infer_term(t, new_context)
+
+            return infer_term(body, new_context)
+
+        case If(condition=condition, consequent=consequent, otherwise=otherwise):
+            condType = infer_term(condition, context)
+            if not isinstance(condType, Boolean):
+                raise TypeError("Condition for If must be a boolean")
+
+            c1 = infer_type(consequent, context)
+            c2 = infer_type(otherwise, context)
+
+            if c1 == c2:
+                return c1
+            else:
+                raise TypeError("Comparisons are uncomparable in if statement")
+
         case 
 
 
