@@ -333,11 +333,11 @@ def test_infer_term_apply():
         infer_term(apply, context)
     
     apply = L4.Apply(target=term, arguments=[])
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         infer_term(apply, context)
     
     apply = L4.Apply(target=term, arguments=[L4.MakeSymbol(name="hi")])
-    with pytest.raises(TypeError):
+    with pytest.raises(ValueError):
         infer_term(apply, context)
 
 def test_infer_term_abstract():

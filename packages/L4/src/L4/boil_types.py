@@ -5,6 +5,7 @@ from L3 import syntax as L3
 from util.sequential_name_generator import SequentialNameGenerator
 
 from . import syntax as L4
+from .overload import resolve_overload
 from .subtype import isSubtype
 
 type Context = Mapping[L4.Identifier, None]
@@ -95,7 +96,9 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
             c1 = infer_term(consequent, context)
             c2 = infer_term(otherwise, context)
 
-            if c1 == c2:
+            if isSubtype(c1, c2):
+                return c2
+            elif isSubtype(c2, c1):
                 return c1
             else:
                 raise TypeError("Comparisons are uncomparable in if statement")
@@ -118,19 +121,19 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
 
         case L4.Apply(target=target, arguments=arguments):
             t = infer_term(target, context)
-            if not isinstance(t, L4.Arrow):
-                raise TypeError("Target is not a function")
+            arg_types = [infer_term(arg, context) for arg in arguments]
+            resolved_arrow = resolve_overload(t, arg_types)
 
-            if len(t.params) != len(arguments):
-                raise TypeError("Argument length mismatch")
+            #if len(resolved_arrow.params) != len(arguments):
+             #   raise TypeError("Argument length mismatch")
 
-            for i, arg in enumerate(arguments):
-                a = infer_term(arg, context)
+            #for i, arg in enumerate(arguments):
+             #   a = infer_term(arg, context)
 
-                if not isSubtype(a, t.params[i]):
-                    raise TypeError(f"Type {a} is not a subtype of {t.params[i]}")
+              #  if not isSubtype(a, resolved_arrow.params[i]):
+               #     raise TypeError(f"Type {a} is not a subtype of {t.params[i]}")
 
-            return t.ret
+            return resolved_arrow.ret
 
         case L4.LetRec(bindings=bindings, body=body):
             new_context = dict(context)
