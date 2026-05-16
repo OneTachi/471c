@@ -329,7 +329,7 @@ def boil_types(
     
             arg_types = [infer_term(arg, context) for arg in arguments]
     
-            selected_arrow = resolve_overload(target_type, arg_types)
+            resolve_overload(target_type, arg_types)
     
             lowered_target = recur(target) 
             lowered_args = [recur(arg) for arg in arguments]
