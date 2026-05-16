@@ -325,7 +325,16 @@ def boil_types(
             return L3.Reference(name=name)
 
         case L4.Apply(target=target, arguments=arguments):
-            return L3.Apply(target=recur(target), arguments=[recur(arg) for arg in arguments])
+            target_type = infer_term(target, context)
+    
+            arg_types = [infer_term(arg, context) for arg in arguments]
+    
+            selected_arrow = resolve_overload(target_type, arg_types)
+    
+            lowered_target = recur(target) 
+            lowered_args = [recur(arg) for arg in arguments]
+    
+            return L3.Apply(target=lowered_target, arguments=lowered_args)
 
         case L4.Immediate(value=value):
             return L3.Immediate(value=value)
