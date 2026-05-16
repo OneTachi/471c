@@ -39,23 +39,23 @@ def uniqify_term(
                 unique_name = fresh(name)
                 unique_value = _term(value)
                 unique_bindings.append((unique_name, unique_value))
-            
+
             updated_context = dict(context)
             for (orig_name, _), (new_name, _) in zip(bindings, unique_bindings):
                 # Just like in the tests.
                 # Grab from context to __get the binding name__ in which we retrieve the value
                 updated_context[orig_name] = new_name
-            
-            new_body = uniqify_term(body, updated_context, fresh) 
+
+            new_body = uniqify_term(body, updated_context, fresh)
 
             return Let(bindings=unique_bindings, body=new_body)
 
-        # LetRec is similar to Let, but each binding should have the new context + prev binding        
+        # LetRec is similar to Let, but each binding should have the new context + prev binding
         case LetRec(bindings=bindings, body=body):
             unique_bindings = []
             updated_context = dict(context)
             tmp_names = []
-            
+
             # Establish new bindings through the context!
             for name, _ in bindings:
                 new_name = fresh(name)
@@ -70,17 +70,16 @@ def uniqify_term(
             new_body = uniqify_term(body, updated_context, fresh)
             return LetRec(bindings=unique_bindings, body=new_body)
 
-        
         # If a name exists in the context, bind it to that unique variable
         case Reference(name=name):
             real_name = context[name]
             return Reference(name=real_name)
-        
+
         # Basically Let/LetRec
         case Abstract(parameters=parameters, body=body):
             unique_parameters = []
             updated_context = dict(context)
-            
+
             # No bindings! So no updating a corresponding binding.
             for parameter in parameters:
                 unique_parameter = fresh(parameter)
@@ -90,7 +89,6 @@ def uniqify_term(
             new_body = uniqify_term(body, updated_context, fresh)
             return Abstract(parameters=unique_parameters, body=new_body)
 
-        
         # Same case as Begin
         case Apply(target=target, arguments=arguments):
             unique_arguments = []
@@ -113,9 +111,9 @@ def uniqify_term(
                 left=_term(left),
                 right=_term(right),
                 consequent=_term(consequent),
-                otherwise=_term(otherwise)
+                otherwise=_term(otherwise),
             )
-        
+
         # count is a natural number, no bindings
         case Allocate(count=count):
             return Allocate(count=count)
@@ -123,7 +121,7 @@ def uniqify_term(
         # index is also just a nat, but base is an unknown term. Just recur on it
         case Load(base=base, index=index):
             return Load(base=_term(base), index=index)
-        
+
         # This does store a value, but doesn't return the binding directly or anything
         case Store(base=base, index=index, value=value):
             return Store(base=_term(base), index=index, value=_term(value))

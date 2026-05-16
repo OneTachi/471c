@@ -19,7 +19,7 @@ from .syntax import (
     Load,
     Store,
     Begin,
-    LetRec
+    LetRec,
 )
 
 
@@ -88,10 +88,7 @@ class AstTransformer(Transformer[Token, Program | Term]):
         return name, value
 
     @v_args(inline=True)
-    def reference(
-        self,
-        name: Identifier
-    ) -> Term:
+    def reference(self, name: Identifier) -> Term:
         return Reference(name=name)
 
     @v_args(inline=True)
@@ -117,7 +114,7 @@ class AstTransformer(Transformer[Token, Program | Term]):
     @v_args(inline=True)
     def allocate(self, _allocate: Token, count: int) -> Term:
         return Allocate(count=count)
-    
+
     @v_args(inline=True)
     def load(self, _load: Token, base: Term, index: int) -> Term:
         return Load(base=base, index=index)
@@ -125,25 +122,25 @@ class AstTransformer(Transformer[Token, Program | Term]):
     @v_args(inline=True)
     def store(self, _store: Token, base: Term, index: int, value: Term) -> Term:
         return Store(base=base, index=index, value=value)
-    
+
     @v_args(inline=True)
     def begin(self, _begin: Token, effects: Sequence[Term], value: Term) -> Term:
         return Begin(effects=effects, value=value)
 
     def effects(self, effects: Sequence[Term]) -> Sequence[Term]:
         return effects
-    
+
     def arguments(self, arguments: Sequence[Term]) -> Sequence[Term]:
         return arguments
-    
+
     @v_args(inline=True)
     def count(self, count: int) -> int:
         return count
-    
+
     @v_args(inline=True)
     def value(self, value: int) -> int:
         return value
-    
+
     @v_args(inline=True)
     def index(self, index: int) -> int:
         return index
@@ -155,7 +152,6 @@ class AstTransformer(Transformer[Token, Program | Term]):
     @v_args(inline=True)
     def target(self, target: Term) -> Term:
         return target
-
 
 
 def parse_term(source: str) -> Term:

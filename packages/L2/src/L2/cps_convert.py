@@ -8,7 +8,9 @@ from L1 import syntax as L1
 # Need to name all intermediate results and make control flow explicit
 def cps_convert_term(
     term: L2.Term,
-    k: Callable[[L1.Identifier], L1.Statement], # A function(name of L1 computation so far) => give us rest of computation
+    k: Callable[
+        [L1.Identifier], L1.Statement
+    ],  # A function(name of L1 computation so far) => give us rest of computation
     fresh: Callable[[str], str],
 ) -> L1.Statement:
     _term = partial(cps_convert_term, fresh=fresh)
@@ -20,10 +22,10 @@ def cps_convert_term(
             result = _term(body, k)
 
             for name, value in reversed(bindings):
-                 result = _term(value, lambda value: L1.Copy(destination=name, source=value, then=result))
+                result = _term(value, lambda value: L1.Copy(destination=name, source=value, then=result))
 
             return result
-        
+
         # Name has been given a value so give k the name so we can return the next steps
         case L2.Reference(name=name):
             return k(name)
@@ -35,9 +37,9 @@ def cps_convert_term(
                 destination=tmp,
                 parameters=[*parameters, c],
                 body=_term(body, lambda body: L1.Apply(target=c, arguments=[body])),
-                then=k(tmp)
+                then=k(tmp),
             )
-        
+
         # This doesn't have a then. So we need to support it in another way, we need to make an abstraction since we need an identifier
         case L2.Apply(target=target, arguments=arguments):
             c = fresh("k")
@@ -45,30 +47,30 @@ def cps_convert_term(
             return L1.Abstract(
                 destination=c,
                 parameters=[tmp],
-                body=k(tmp), 
-                then= _term(
+                body=k(tmp),
+                then=_term(
                     target,
                     lambda target_id: _terms(
                         arguments,
                         lambda args_id: L1.Apply(
                             target=target_id,
                             arguments=[*args_id, c],
-                        )
-                    )
-                )
+                        ),
+                    ),
+                ),
             )
 
         case L2.Immediate(value=value):
             # Temporary name (not given like in reference!)
             tmp = fresh("t")
             return L1.Immediate(
-                destination=tmp, # Our new temp destination
+                destination=tmp,  # Our new temp destination
                 value=value,
-                then=k(tmp) # Rest of computation
+                then=k(tmp),  # Rest of computation
             )
-        
+
         # Control flow for primitive is to execute the left first and then the right
-        case L2.Primitive(operator=operator, left=left, right=right): # Note we have terms now. So recur them!
+        case L2.Primitive(operator=operator, left=left, right=right):  # Note we have terms now. So recur them!
             tmp = fresh("t")
             # We nest left and right (called left and right for the lambda funcs) because we don't have the final result yet
             return _term(
@@ -76,14 +78,16 @@ def cps_convert_term(
                 k=lambda left: _term(
                     right,
                     k=lambda right: L1.Primitive(
-                        destination=tmp, # necc for then
+                        destination=tmp,  # necc for then
                         operator=operator,
                         left=left,
                         right=right,
-                        then=k(tmp) # Remember that our tmp name was established above, we simply ask for what happens next
+                        then=k(
+                            tmp
+                        ),  # Remember that our tmp name was established above, we simply ask for what happens next
                         # k is our black box (for now) that just tells us what happens next with a variable as input
-                    )
-                )
+                    ),
+                ),
             )
 
         case L2.Branch(operator=operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
@@ -102,43 +106,33 @@ def cps_convert_term(
                             operator=operator,
                             left=left,
                             right=right,
-                            then=_term(consequent, lambda consequent: L1.Apply(
-                                target=j,
-                                arguments=[consequent]
-                            )),
-                            otherwise=_term(otherwise, lambda otherwise: L1.Apply(
-                                target=j,
-                                arguments=[otherwise]
-                            )),
-                        )
-                    )
-                )
+                            then=_term(consequent, lambda consequent: L1.Apply(target=j, arguments=[consequent])),
+                            otherwise=_term(otherwise, lambda otherwise: L1.Apply(target=j, arguments=[otherwise])),
+                        ),
+                    ),
+                ),
             )
-        
+
         # Similar to Reference
         case L2.Allocate(count=count):
             tmp = fresh("t")
-            return L1.Allocate(
-                destination=tmp,
-                count=count,
-                then=k(tmp)
-            )
+            return L1.Allocate(destination=tmp, count=count, then=k(tmp))
 
         # Similar to Primitive
         case L2.Load(base=base, index=index):
             tmp = fresh("t")
             return _term(
-                base, 
-                k=lambda base: L1.Load( 
+                base,
+                k=lambda base: L1.Load(
                     # base turns into whatever value the stuff below evaluates to
                     destination=tmp,
                     base=base,
                     index=index,
-                    then=k(tmp)
+                    then=k(tmp),
                 ),
             )
-        
-        # Evaluates to a constant value=0, but we could have code that relies on this evaluation.  
+
+        # Evaluates to a constant value=0, but we could have code that relies on this evaluation.
         case L2.Store(base=base, index=index, value=value):
             tmp = fresh("t")
             # Store is really two operations where is stores and gives you a pointer to the 0
@@ -151,19 +145,17 @@ def cps_convert_term(
                         base=base,
                         index=index,
                         value=value,
-                        then=L1.Immediate(
-                            destination=tmp,
-                            value=0,
-                            then=k(tmp)
-                        ),
-                    )
-                )
+                        then=L1.Immediate(destination=tmp, value=0, then=k(tmp)),
+                    ),
+                ),
             )
 
         case L2.Begin(effects=effects, value=value):  # pragma: no branch
             # Make sure that effects stay in order.
             # L1 Begin doesn't exist. Since our control flow has now been accomplished as value is determined!
-            return _terms(effects, k=lambda effects: _term(value, lambda value: k(value))) # just return our explicit name
+            return _terms(
+                effects, k=lambda effects: _term(value, lambda value: k(value))
+            )  # just return our explicit name
 
 
 def cps_convert_terms(
@@ -195,5 +187,7 @@ def cps_convert_program(
         case L2.Program(parameters=parameters, body=body):  # pragma: no branch
             return L1.Program(
                 parameters=parameters,
-                body=_term(body, lambda value: L1.Halt(value=value)), # get name of the answer and do rest of computation
+                body=_term(
+                    body, lambda value: L1.Halt(value=value)
+                ),  # get name of the answer and do rest of computation
             )
