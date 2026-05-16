@@ -1,4 +1,4 @@
-from collections.abc import Mapping
+from collections.abc import Mapping, Callable
 from functools import partial
 from util.sequential_name_generator import SequentialNameGenerator
 from L3 import syntax as L3
@@ -24,60 +24,60 @@ def infer_term(
     context: Mapping[L4.Identifier, L4.Type]
 ) -> L4.Type:
     match term:
-        case Immediate():
-            return Int()
+        case L4.Immediate():
+            return L4.Int()
         
-        case Primitive(left=left, right=right):
-            l = infer_term(left, context)
-            r = infer_term(right, context)
-            if not isinstance(l, Int):
+        case L4.Primitive(left=left, right=right):
+            lef = infer_term(left, context)
+            rig = infer_term(right, context)
+            if not isinstance(lef, L4.Int):
                 raise TypeError("Left side of primitive is not Int")
-            if not isinstance(r, Int):
+            if not isinstance(rig, L4.Int):
                 raise TypeError("Right side of primitive is not Int")
 
-            return Int()
+            return L4.Int()
 
-        case MakeBool():
-            return Boolean()
+        case L4.MakeBool():
+            return L4.Boolean()
 
-        case MakeSymbol():
-            return Symbol()
+        case L4.MakeSymbol():
+            return L4.Symbol()
 
-        case MakeRecord(fields=fields):
+        case L4.MakeRecord(fields=fields):
             types = {identifier : infer_term(value, context) for identifier, value in fields}
-            return Record(fields=types)
+            return L4.Record(fields=types)
 
-        case MakeTuple(values=values):
+        case L4.MakeTuple(values=values):
             types = [infer_term(value, context) for value in values]
-            return Tuple(values=types)
+            return L4.Tuple(values=types)
 
         # Does variable exist in the context or not basically
-        case Reference(name=name):
+        case L4.Reference(name=name):
             if name not in context:
                 raise TypeError(f"Undefined variable: {name}")
             return context[name]
 
-        case GetTupleValue(term=tm, index=index):
+        case L4.GetTupleValue(term=tm, index=index):
             t = infer_term(tm, context)
-            if not isinstance(t, Tuple):
+            if not isinstance(t, L4.Tuple):
                 raise TypeError("Not a tuple or nonexistent.")
             if index >= len(t.values):
                 raise TypeError("Index is too large!")
             
             return t.values[index]
 
-        case GetRecordValue(record=rd, key=key):
-            r = infer_term(rd, context)
+        case L4.GetRecordValue(record=rd, key=key):
+            rig = infer_term(rd, context)
 
-            if not isinstance(r, Record):
+            if not isinstance(rig, L4.Record):
                 raise TypeError("Not a record or nonexistent.")
 
-            if key not in r.fields:
+            if key not in rig.fields:
                 raise TypeError("Key doesn't exist in record.")
 
-            return r.fields[key]
+            return rig.fields[key]
 
-        case Let(bindings=bindings, body=body):
+        case L4.Let(bindings=bindings, body=body):
             new_context = dict(context)
             
             # Ensure our context has types
@@ -86,20 +86,20 @@ def infer_term(
 
             return infer_term(body, new_context)
 
-        case If(condition=condition, consequent=consequent, otherwise=otherwise):
+        case L4.If(condition=condition, consequent=consequent, otherwise=otherwise):
             condType = infer_term(condition, context)
-            if not isinstance(condType, Boolean):
+            if not isinstance(condType, L4.Boolean):
                 raise TypeError("Condition for If must be a boolean")
 
-            c1 = infer_type(consequent, context)
-            c2 = infer_type(otherwise, context)
+            c1 = infer_term(consequent, context)
+            c2 = infer_term(otherwise, context)
 
             if c1 == c2:
                 return c1
             else:
                 raise TypeError("Comparisons are uncomparable in if statement")
 
-        case Abstract(parameters=parameters, ret=ret, body=body):
+        case L4.Abstract(parameters=parameters, ret=ret, body=body):
             new_context = dict(context)
             # Get parameters types for Arrow
             params = []
@@ -114,18 +114,18 @@ def infer_term(
             if inferred_body != ret:
                 raise TypeError(f"Return type does not match body. Expected {ret}, got {inferred_body}")
 
-            return Arrow(parameters=params, ret=ret)
+            return L4.Arrow(parameters=params, ret=ret)
 
-        case Apply(target=target, arguments=arguments):
-            t = infer_term(t, context)
-            if not isinstance(t, Arrow):
+        case L4.Apply(target=target, arguments=arguments):
+            t = infer_term(target, context)
+            if not isinstance(t, L4.Arrow):
                 raise TypeError("Target is not a function")
 
             if len(t.parameters) != len(arguments):
                 raise TypeError("Argument length mismatch")
 
             for i, arg in enumerate(arguments):
-                a = infer_type(arg, context)
+                a = infer_term(arg, context)
                 
                 # TODO SUBTYPING
                 if a != t.parameters[i]:
@@ -133,7 +133,7 @@ def infer_term(
                 
             return t.ret
 
-        case LetRec(bindings=bindings, body=body):
+        case L4.LetRec(bindings=bindings, body=body):
             new_context = dict(context)
 
             for name, binding_type, _ in bindings:
@@ -147,17 +147,17 @@ def infer_term(
 
                 return infer_term(body, new_context)
         
-        case Begin(effects=effects, value=value):
+        case L4.Begin(effects=effects, value=value):
             # check validity of types
             for effect in effects:
                 infer_term(effect)
 
             return infer_term(value, context)
 
-        case Branch(left=left, right=right, consequent=consequent, otherwise=otherwise):
-            if not isinstance(infer_term(left, context), Int):
+        case L4.Branch(left=left, right=right, consequent=consequent, otherwise=otherwise):
+            if not isinstance(infer_term(left, context), L4.Int):
                 raise TypeError("Left side of comparison is not Int")
-            if not isinstance(infer_term(right, context), Int):
+            if not isinstance(infer_term(right, context), L4.Int):
                 raise TypeError("Right side of comparison is not Int")
 
             c = infer_term(consequent, context)
@@ -169,26 +169,26 @@ def infer_term(
 
             raise TypeError("Branch consequent and otherwise do not match types")
 
-        case Allocate(count=count):
-            return Int()
+        case L4.Allocate():
+            return L4.Int()
         
-        case Load(base=base, index=index):
-            if not isinstance(infer_term(base, context), Int):
+        case L4.Load(base=base, index=index):
+            if not isinstance(infer_term(base, context), L4.Int):
                 raise TypeError("Base of Load must be an Int (address)")
             
-            return Int()
+            return L4.Int()
 
-        case Store(base=base, index=index, value=value):
-            if not isinstance(infer_term(base, context), Int):
+        case L4.Store(base=base, index=index, value=value):
+            if not isinstance(infer_term(base, context), L4.Int):
                 raise TypeError("Base of Load must be an Int (address)")
-            if not isinstance(infer_term(index, context), Int):
+            if not isinstance(infer_term(index, context), L4.Int):
                 raise TypeError("Index of Load must be an Int (address)")
 
             v = infer_term(value, context)
-            if not isinstance(v, Int):
+            if not isinstance(v, L4.Int):
                 raise TypeError("Value of Load must be an Int")
 
-            return Int()
+            return L4.Int()
 
 
 def boil_program(
@@ -197,13 +197,12 @@ def boil_program(
 ) -> tuple[SequentialNameGenerator, L3.Program]:
     fresh = SequentialNameGenerator()
     _term = partial(boil_types, fresh=fresh)
-    context = {name: t for name, t in program.parameters}
     # Use freshness for lowering
     renamed_params = {name: fresh(name) for name, _ in program.parameters}
     lowered_params = [renamed_params[name] for name, _ in program.parameters]
     lowered_context = {renamed_params[name]: t for name, t in program.parameters}
 
-    lowered_body = boil_types(term=body, symbol_table=symbol_table, fresh=fresh, context=context)
+    lowered_body = boil_types(term=program.body, symbol_table=symbol_table, fresh=fresh, context=lowered_context)
 
     return (
         fresh,
@@ -215,13 +214,13 @@ def boil_types(
     term: L4.Term,
     symbol_table: Mapping[L4.Identifier, int],
     fresh: Callable[[str], str],
-    context: Mapping[L4.Identifier, Type]
+    context: Mapping[L4.Identifier, L4.Type]
 ) -> L3.Term:
     recur = partial(boil_types, fresh=fresh, symbol_table=symbol_table, context=context)
     match term: 
         # Boils down into 1 or 0 for truth
-        case MakeBool(value=value):
-            if value == True:
+        case L4.MakeBool(value=value):
+            if value:
                 return L3.Immediate(value=1)
             else:
                 return L3.Immediate(value=0)
@@ -237,14 +236,14 @@ def boil_types(
             )
 
         # Boils down into basic integer determined by symbol table 
-        case MakeSymbol(name=name):
+        case L4.MakeSymbol(name=name):
             if name not in symbol_table:
-                symbol_table[name] = len(table)
+                symbol_table[name] = len(symbol_table)
             return L3.Immediate(value=symbol_table[name])
 
         
         # Store all values in memory and make sure reference to is properly set
-        case MakeTuple(values=values):
+        case L4.MakeTuple(values=values):
             lowered_values = [recur(v) for v in values]
 
             new_name = fresh("tuple")
@@ -259,7 +258,7 @@ def boil_types(
             ]
 
             return L3.Let(
-                bindings=[(ptr_name, L3.Allocate(count=len(elements)))],
+                bindings=[(new_name, L3.Allocate(count=len(values)))],
                 body=L3.Begin(
                     effects=seq,
                     value=L3.Reference(name=new_name)
@@ -267,11 +266,11 @@ def boil_types(
             )
         
         # Grab the reference and specific term
-        case GetTupleValue(index=index, term=term):
+        case L4.GetTupleValue(index=index, term=term):
             return L3.Load(recur(term), index=index)
         
         # Similar to Tuple, but sort alphabetically as there is no given order
-        case MakeRecord(fields=fields):
+        case L4.MakeRecord(fields=fields):
             identifiers = [name for name, value in fields]
             identifiers= sorted(identifiers) # alphabetical
             
@@ -295,9 +294,9 @@ def boil_types(
                 )
             )
         
-        case GetRecordValue(record=record, key=key):
-            record_type = infer_type(record, context)
-            if not isinstance(record_type, Record):
+        case L4.GetRecordValue(record=record, key=key):
+            record_type = infer_term(record, context)
+            if not isinstance(record_type, L4.Record):
                 raise TypeError("Term is not type Record")
 
             sorted_keys = sorted(record_type.fields.keys())
@@ -308,24 +307,24 @@ def boil_types(
 
             return L3.Load(base=recur(record), index=index)
 
-        case Let(bindings=bindings, body=body):
+        case L4.Let(bindings=bindings, body=body):
             ctx = dict(context)
             lowered_bindings = []
             for name, value in bindings:
                 # Pass type checker
-                ctx[name] = infer_type(value, ctx)
+                ctx[name] = infer_term(value, ctx)
                 lowered_bindings.append((name, recur(value, ctx)))
             return L3.Let(bindings=lowered_bindings, body=recur(body, ctx))
 
-        case LetRec(bindings=bindings, body=body):
+        case L4.LetRec(bindings=bindings, body=body):
             ctx = dict(context)
             for name, t, _ in bindings:
                 ctx[name] = t
 
-            lowered_bindings = [(name, recur(value, ctx) for name, _, value in bindings)]
+            lowered_bindings = [(name, recur(value, ctx)) for name, _, value in bindings]
             return L3.LetRec(bindings=lowered_bindings, body=recur(body, ctx))
 
-        case Abstract(parameters=parameters, body=body):
+        case L4.Abstract(parameters=parameters, body=body):
             ctx = dict(context)
             lowered_params = []
             for name, t in parameters:
@@ -335,30 +334,30 @@ def boil_types(
             return L3.Abstract(parameters=lowered_params, body=recur(body, ctx))
         
         ## STANDARD ONES
-        case Reference(name=name):
+        case L4.Reference(name=name):
             return L3.Reference(name=name)
 
-        case Apply(target=target, arguments=arguments):
+        case L4.Apply(target=target, arguments=arguments):
             return L3.Apply(target=recur(target), arguments=[recur(arg) for arg in arguments])
 
-        case Immediate(value=value):
+        case L4.Immediate(value=value):
             return L3.Immediate(value=value)
 
-        case Primitive(operator=operator, left=left, right=right):
+        case L4.Primitive(operator=operator, left=left, right=right):
             return L3.Primitive(operator=operator, left=recur(left), right=recur(right))
 
-        case Branch(operator=operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
+        case L4.Branch(operator=operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
             return L3.Branch(operator=operator, left=recur(left), right=recur(right), consequent=recur(consequent), otherwise=recur(otherwise))
     
-        case Allocate(count=count):
+        case L4.Allocate(count=count):
             return L3.Allocate(count=count)
 
-        case Load(base=base, index=index):
+        case L4.Load(base=base, index=index):
             return L3.Load(base=recur(base), index=index)
 
-        case Store(base=base, index=index, value=value):
+        case L4.Store(base=base, index=index, value=value):
             return L3.Store(base=recur(base), index=index, value=recur(value))
 
-        case Begin(effects=effects, value=value):
+        case L4.Begin(effects=effects, value=value):
             return L3.Begin(value=recur(value), effects=[recur(e) for e in effects])
             

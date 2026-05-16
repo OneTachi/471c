@@ -1,4 +1,4 @@
-from collections.abc import Sequence
+from collections.abc import Sequence, Mapping
 from typing import Annotated, Literal
 
 from pydantic import BaseModel, Field
@@ -54,7 +54,7 @@ class If(BaseModel, frozen=True):
     tag: Literal["if"] = "if"
     condition: Term
     consequent: Term
-    otherwise Term
+    otherwise: Term
 
 class MakeBool(BaseModel, frozen=True):
     tag: Literal["bool"] = "bool"
