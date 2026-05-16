@@ -114,21 +114,21 @@ def infer_term(
             if inferred_body != ret:
                 raise TypeError(f"Return type does not match body. Expected {ret}, got {inferred_body}")
 
-            return L4.Arrow(parameters=params, ret=ret)
+            return L4.Arrow(params=params, ret=ret)
 
         case L4.Apply(target=target, arguments=arguments):
             t = infer_term(target, context)
             if not isinstance(t, L4.Arrow):
                 raise TypeError("Target is not a function")
 
-            if len(t.parameters) != len(arguments):
+            if len(t.params) != len(arguments):
                 raise TypeError("Argument length mismatch")
 
             for i, arg in enumerate(arguments):
                 a = infer_term(arg, context)
                 
                 # TODO SUBTYPING
-                if a != t.parameters[i]:
+                if a != t.params[i]:
                     raise TypeError(f"Argument {i} is type {a}. Expected {t.parameters[i]}")
                 
             return t.ret
@@ -150,7 +150,7 @@ def infer_term(
         case L4.Begin(effects=effects, value=value):
             # check validity of types
             for effect in effects:
-                infer_term(effect)
+                infer_term(effect, context)
 
             return infer_term(value, context)
 
@@ -181,11 +181,8 @@ def infer_term(
         case L4.Store(base=base, index=index, value=value):
             if not isinstance(infer_term(base, context), L4.Int):
                 raise TypeError("Base of Load must be an Int (address)")
-            if not isinstance(infer_term(index, context), L4.Int):
-                raise TypeError("Index of Load must be an Int (address)")
 
-            v = infer_term(value, context)
-            if not isinstance(v, L4.Int):
+            if not isinstance(infer_term(value, context), L4.Int):
                 raise TypeError("Value of Load must be an Int")
 
             return L4.Int()
