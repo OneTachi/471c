@@ -111,7 +111,8 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
             # Check if body matches return type
             inferred_body = infer_term(body, new_context)
 
-            isSubtype(inferred_body, ret)
+            if not isSubtype(inferred_body, ret):
+                raise TypeError(f"Type {a} is not a subtype of {b}")
 
             return L4.Arrow(params=params, ret=ret)
 
@@ -126,23 +127,23 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
             for i, arg in enumerate(arguments):
                 a = infer_term(arg, context)
 
-                isSubtype(a, t.parameters[i])
+                if not isSubtype(a, t.params[i]):
+                    raise TypeError(f"Type {a} is not a subtype of {b}")
 
             return t.ret
 
         case L4.LetRec(bindings=bindings, body=body):
             new_context = dict(context)
-
+            
             for name, binding_type, _ in bindings:
                 new_context[name] = binding_type
-
-            for name, binding_type, value in bindings: # pragma: no branch
-                # Pragma exists here as this is tested, but testing program is not allowing it through
+    
+            for name, binding_type, value in bindings:
                 inferred = infer_term(value, new_context)
-
-                isSubtype(inferred, binding_type)
-
-                return infer_term(body, new_context)
+                if not isSubtype(inferred, binding_type):
+                    raise TypeError(f"Binding {name} type mismatch")
+            
+            return infer_term(body, new_context)
 
         case L4.Begin(effects=effects, value=value):
             # check validity of types
@@ -162,6 +163,8 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
 
             if isSubtype(c, o):
                 return c
+            if isSubtype(o, c):
+                return o
 
             raise TypeError("Branch consequent and otherwise do not match types")
 
