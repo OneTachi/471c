@@ -276,6 +276,19 @@ def test_infer_term_branch():
     term = L4.Branch(operator="==", right=L4.Immediate(value=1), left=L4.Immediate(value=1), consequent=L4.MakeBool(value=False), otherwise=L4.Immediate(value=1))
     with pytest.raises(TypeError):
         infer_term(term, context)
+    term = L4.Branch(
+        operator="==",
+        left=L4.Immediate(value=1),
+        right=L4.Immediate(value=1),
+        consequent=L4.MakeRecord(fields=[
+            ("a", L4.Immediate(value=10))
+        ]),
+        otherwise=L4.MakeRecord(fields=[
+            ("a", L4.Immediate(value=20)),
+            ("b", L4.Immediate(value=30))
+        ])
+    )
+    assert infer_term(term, context) == L4.Record(fields={"a": L4.Int()})
 
 def test_infer_term_begin():
     term = L4.Begin(effects=[L4.Immediate(value=2)], value=L4.Immediate(value=0))
@@ -315,11 +328,15 @@ def test_infer_term_apply():
     assert infer_term(apply, context) == L4.Int()
     
     targ = L4.Immediate(value=10)
-    apply = L4.Apply(target=targ, arguments=[L4.MakeBool(value=False)])
+    apply = L4.Apply(target=targ, arguments=[L4.MakeSymbol(name="hi")])
     with pytest.raises(TypeError):
         infer_term(apply, context)
     
     apply = L4.Apply(target=term, arguments=[])
+    with pytest.raises(TypeError):
+        infer_term(apply, context)
+    
+    apply = L4.Apply(target=term, arguments=[L4.MakeSymbol(name="hi")])
     with pytest.raises(TypeError):
         infer_term(apply, context)
 
@@ -332,6 +349,16 @@ def test_infer_term_abstract():
     context: Context = {}
     expected = L4.Arrow(params=[L4.Int()], ret=L4.Int())
     assert infer_term(term, context) == expected
+    
+    term = L4.Abstract(
+        parameters=[("x", L4.Int())],
+        ret=L4.Boolean(),
+        body=L4.Reference(name="x")
+    )
+
+    with pytest.raises(TypeError):
+        infer_term(term, context)
+
 
 def test_infer_term_if():
     term = L4.If(

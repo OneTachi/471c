@@ -112,7 +112,7 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
             inferred_body = infer_term(body, new_context)
 
             if not isSubtype(inferred_body, ret):
-                raise TypeError(f"Type {a} is not a subtype of {b}")
+                raise TypeError(f"Type {inferred_body} is not a subtype of {ret}")
 
             return L4.Arrow(params=params, ret=ret)
 
@@ -128,7 +128,7 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
                 a = infer_term(arg, context)
 
                 if not isSubtype(a, t.params[i]):
-                    raise TypeError(f"Type {a} is not a subtype of {b}")
+                    raise TypeError(f"Type {a} is not a subtype of {t.params[i]}")
 
             return t.ret
 
@@ -162,9 +162,9 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
             o = infer_term(otherwise, context)
 
             if isSubtype(c, o):
-                return c
-            if isSubtype(o, c):
                 return o
+            if isSubtype(o, c):
+                return c
 
             raise TypeError("Branch consequent and otherwise do not match types")
 
