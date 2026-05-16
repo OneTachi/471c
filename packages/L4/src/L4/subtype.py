@@ -1,3 +1,4 @@
+from collections.abc import Mapping
 from functools import partial
 
 from .syntax import (
@@ -17,9 +18,11 @@ from .syntax import (
     MakeSymbol,
     MakeTuple,
     Primitive,
+    Record,
     Reference,
     Store,
     Term,
+    Tuple,
     Type,
 )
 
@@ -29,21 +32,60 @@ def isSubtype(
     expected: Type,
 ) -> bool:
     try:
-        coerce(actual, expected)
+        sub_check(actual, expected)
         return True
     except ValueError:
         return False
-    
 
-# See Turbak. 12.1.2 Dimensions of Subtyping: Subset Semantics versus Coercion Semantics of Subtyping
-def coerce(
+
+def sub_check(
     actual: Type,
     expected: Type,
-) -> Term:
-    _coerce = partial(coerce)
+) -> Type:
+    _check = partial(sub_check)
 
     # if equivalent(actual, expected):
     #    return actual
+
+    match actual, expected:
+        case Record(fields=fs1), Record(fields=fs2):
+            # sorted_expected = sorted(fs2)
+
+            components: Mapping[Identifier, Type] = {}
+
+            for key, expected_ty in fs2.items():
+                key_present = [item for item in fs1 if item[0] == key]
+                if not key_present:
+                    raise ValueError(f"missing field {key} in {actual}")
+
+                components[key] = expected_ty
+
+            return Record(fields=components)
+
+        case Tuple(values=v1), Tuple(values=v2):
+            if len(v2) > len(v1):
+                raise ValueError(f"expected tuple of length {len(v2)}, but got tuple of length {len(v1)}")
+
+            new_vals: list[Type] = []
+
+            for i in range(len(v2)):
+                new_vals.append(_check(v1[i], v2[i]))
+
+            return Tuple(values=new_vals)
+
+        case _:
+            raise ValueError(f"can not convert from {actual} to {expected}")
+
+
+# See Turbak. 12.1.2 Dimensions of Subtyping: Subset Semantics versus Coercion Semantics of Subtyping
+def coerce(
+    actual: Term,
+    expected: Term,
+) -> Term:
+    _coerce = partial(coerce)
+
+    if equivalent(actual, expected):
+        return actual
 
     match actual, expected:
         case MakeRecord(fields=fs1), MakeRecord(fields=fs2):
@@ -73,9 +115,6 @@ def coerce(
 
         case _:
             raise ValueError(f"can not convert from {actual} to {expected}")
-
-
-
 
 
 def equivalent(
