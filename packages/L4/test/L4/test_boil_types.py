@@ -223,7 +223,6 @@ def test_infer_program():
         ret=L4.Int(),
         body=L4.Immediate(value=3)
     )
-    context: Context = {}
     assert infer_program(program) == L4.Int()
  
     program = L4.Program(
@@ -395,6 +394,7 @@ def test_infer_term_gettuple():
 
     expected = L4.Int()
     actual = infer_term(term, context)
+    assert actual == expected
 
     term = L4.GetTupleValue(term=L4.Immediate(value=2), index=0)
     with pytest.raises(TypeError):
