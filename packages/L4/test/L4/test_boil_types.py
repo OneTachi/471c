@@ -206,7 +206,6 @@ def test_boil_types_if():
             consequent=L3.Immediate(value=0),
             otherwise=L3.Immediate(value=0)
             )
-
 def test_boil_types_makebool():
     term = L4.MakeBool(value=False)
     symbol_table = {}
@@ -386,6 +385,18 @@ def test_infer_term_if():
     )
     with pytest.raises(TypeError):
         infer_term(term, context)
+
+    term = L4.If(
+        condition=L4.MakeBool(value=True),
+        consequent=L4.MakeRecord(fields=[
+            ("a", L4.Immediate(value=1))
+        ]),
+        otherwise=L4.MakeRecord(fields=[
+            ("a", L4.Immediate(value=2)),
+            ("b", L4.Immediate(value=3))
+        ]))
+
+    assert infer_term(term, context) == L4.Record(fields={"a": L4.Int()})
     
 
 def test_infer_term_let():
