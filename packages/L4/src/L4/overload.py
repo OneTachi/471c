@@ -33,9 +33,6 @@ def choose_overload(candidates: Sequence[Arrow], arg_types: Sequence[Type]) -> A
         )
     ]
 
-    if not best_candidates:
-        raise ValueError(f"No best overload found for {arg_types}")
-
     first = best_candidates[0]
     if all(equivalent(first, candidate) for candidate in best_candidates):
         return first

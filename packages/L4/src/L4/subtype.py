@@ -36,15 +36,6 @@ def coerce(
         return expected
 
     match actual, expected:
-        case Boolean(), Boolean():
-            return expected
-
-        case Int(), Int():
-            return expected
-
-        case Symbol(), Symbol():
-            return expected
-
         case Arrow(params=p1, ret=r1), Arrow(params=p2, ret=r2):
             if len(p1) != len(p2):
                 raise ValueError("function arity mismatch")
