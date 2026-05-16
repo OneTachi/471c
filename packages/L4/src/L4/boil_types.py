@@ -126,7 +126,6 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
             for i, arg in enumerate(arguments):
                 a = infer_term(arg, context)
 
-                # TODO SUBTYPING
                 isSubtype(a, t.parameters[i])
 
             return t.ret
@@ -139,7 +138,7 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
 
             for name, binding_type, value in bindings:
                 inferred = infer_term(value, new_context)
-                # TODO Subtyping here
+
                 isSubtype(inferred, binding_type)
 
                 return infer_term(body, new_context)
@@ -160,7 +159,6 @@ def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Ty
             c = infer_term(consequent, context)
             o = infer_term(otherwise, context)
 
-            # TODO Subtyping
             if isSubtype(c, o):
                 return c
 
