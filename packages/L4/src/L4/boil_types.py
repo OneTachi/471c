@@ -1,32 +1,33 @@
-from collections.abc import Mapping, Callable
+from collections.abc import Callable, Mapping
 from functools import partial
-from util.sequential_name_generator import SequentialNameGenerator
+
 from L3 import syntax as L3
+from util.sequential_name_generator import SequentialNameGenerator
 
 from . import syntax as L4
+from .subtype import isSubtype
 
 type Context = Mapping[L4.Identifier, None]
+
 
 # Pass to verify program's type safety
 def infer_program(program: L4.Program) -> L4.Type:
     context = {name: t for name, t in program.parameters}
-    
+
     body_type = infer_term(program.body, context)
-    
+
     if body_type != program.ret:
         raise TypeError(f"Program body returns {body_type}. Expected {program.ret}")
-    
+
     return program.ret
 
+
 # Pass that assigns types to everything
-def infer_term(
-    term: L4.Term,
-    context: Mapping[L4.Identifier, L4.Type]
-) -> L4.Type:
+def infer_term(term: L4.Term, context: Mapping[L4.Identifier, L4.Type]) -> L4.Type:
     match term:
         case L4.Immediate():
             return L4.Int()
-        
+
         case L4.Primitive(left=left, right=right):
             lef = infer_term(left, context)
             rig = infer_term(right, context)
@@ -44,7 +45,7 @@ def infer_term(
             return L4.Symbol()
 
         case L4.MakeRecord(fields=fields):
-            types = {identifier : infer_term(value, context) for identifier, value in fields}
+            types = {identifier: infer_term(value, context) for identifier, value in fields}
             return L4.Record(fields=types)
 
         case L4.MakeTuple(values=values):
@@ -63,7 +64,7 @@ def infer_term(
                 raise TypeError("Not a tuple or nonexistent.")
             if index >= len(t.values):
                 raise TypeError("Index is too large!")
-            
+
             return t.values[index]
 
         case L4.GetRecordValue(record=rd, key=key):
@@ -79,7 +80,7 @@ def infer_term(
 
         case L4.Let(bindings=bindings, body=body):
             new_context = dict(context)
-            
+
             # Ensure our context has types
             for name, t in bindings:
                 new_context[name] = infer_term(t, new_context)
@@ -109,10 +110,8 @@ def infer_term(
 
             # Check if body matches return type
             inferred_body = infer_term(body, new_context)
-            
-            # TODO change for subtype
-            if inferred_body != ret:
-                raise TypeError(f"Return type does not match body. Expected {ret}, got {inferred_body}")
+
+            isSubtype(inferred_body, ret)
 
             return L4.Arrow(params=params, ret=ret)
 
@@ -126,11 +125,9 @@ def infer_term(
 
             for i, arg in enumerate(arguments):
                 a = infer_term(arg, context)
-                
-                # TODO SUBTYPING
-                if a != t.params[i]:
-                    raise TypeError(f"Argument {i} is type {a}. Expected {t.parameters[i]}")
-                
+
+                isSubtype(a, t.parameters[i])
+
             return t.ret
 
         case L4.LetRec(bindings=bindings, body=body):
@@ -142,12 +139,11 @@ def infer_term(
             for name, binding_type, value in bindings: # pragma: no branch
                 # Pragma exists here as this is tested, but testing program is not allowing it through
                 inferred = infer_term(value, new_context)
-                #TODO Subtyping here
-                if inferred != binding_type:
-                    raise TypeError(f"Expected type {binding_type}. Got {inferred}")
+
+                isSubtype(inferred, binding_type)
 
                 return infer_term(body, new_context)
-        
+
         case L4.Begin(effects=effects, value=value):
             # check validity of types
             for effect in effects:
@@ -164,19 +160,18 @@ def infer_term(
             c = infer_term(consequent, context)
             o = infer_term(otherwise, context)
 
-            # TODO Subtyping
-            if c == o:
+            if isSubtype(c, o):
                 return c
 
             raise TypeError("Branch consequent and otherwise do not match types")
 
         case L4.Allocate():
             return L4.Int()
-        
+
         case L4.Load(base=base, index=index):
             if not isinstance(infer_term(base, context), L4.Int):
                 raise TypeError("Base of Load must be an Int (address)")
-            
+
             return L4.Int()
 
         case L4.Store(base=base, index=index, value=value): # pragma: no branch
@@ -203,68 +198,56 @@ def boil_program(
 
     lowered_body = boil_types(term=program.body, symbol_table=symbol_table, fresh=fresh, context=lowered_context)
 
-    return (
-        fresh,
-        L3.Program(parameters=lowered_params, body=lowered_body)
-    )
+    return (fresh, L3.Program(parameters=lowered_params, body=lowered_body))
 
 
 def boil_types(
     term: L4.Term,
     symbol_table: Mapping[L4.Identifier, int],
     fresh: Callable[[str], str],
-    context: Mapping[L4.Identifier, L4.Type]
+    context: Mapping[L4.Identifier, L4.Type],
 ) -> L3.Term:
     recur = partial(boil_types, fresh=fresh, symbol_table=symbol_table, context=context)
-    match term: 
+    match term:
         # Boils down into 1 or 0 for truth
         case L4.MakeBool(value=value):
             if value:
                 return L3.Immediate(value=1)
             else:
                 return L3.Immediate(value=0)
-        
-        # Boil everything down into left holding all values. Since we can have just a true or false 
+
+        # Boil everything down into left holding all values. Since we can have just a true or false
         case L4.If(condition=condition, consequent=consequent, otherwise=otherwise):
             return L3.Branch(
                 operator="==",
                 left=recur(condition),
                 right=L3.Immediate(value=1),
                 consequent=recur(consequent),
-                otherwise=recur(otherwise)
+                otherwise=recur(otherwise),
             )
 
-        # Boils down into basic integer determined by symbol table 
+        # Boils down into basic integer determined by symbol table
         case L4.MakeSymbol(name=name):
             if name not in symbol_table: # pragma: no branch
                 # Also tested, but is yellow
                 symbol_table[name] = len(symbol_table)
             return L3.Immediate(value=symbol_table[name])
 
-        
         # Store all values in memory and make sure reference to is properly set
         case L4.MakeTuple(values=values):
             lowered_values = [recur(v) for v in values]
 
             new_name = fresh("tuple")
-            
+
             seq = [
-                L3.Store(
-                    base=L3.Reference(name=new_name),
-                    index=i,
-                    value=val
-                )
-                for i, val in enumerate(lowered_values)
+                L3.Store(base=L3.Reference(name=new_name), index=i, value=val) for i, val in enumerate(lowered_values)
             ]
 
             return L3.Let(
                 bindings=[(new_name, L3.Allocate(count=len(values)))],
-                body=L3.Begin(
-                    effects=seq,
-                    value=L3.Reference(name=new_name)
-                )
+                body=L3.Begin(effects=seq, value=L3.Reference(name=new_name)),
             )
-        
+
         # Grab the reference and specific term
         case L4.GetTupleValue(index=index, term=term):
             return L3.Load(base=recur(term), index=index)
@@ -283,7 +266,7 @@ def boil_types(
                 )
                 for i, key in enumerate(sorted_keys)
             ]
-            
+
             return L3.Let(
                 bindings=[(ptr, L3.Allocate(count=len(sorted_keys)))],
                 body=L3.Begin(
@@ -291,7 +274,7 @@ def boil_types(
                     value=L3.Reference(name=ptr)
                 )
             )
-        
+
         case L4.GetRecordValue(record=record, key=key):
             record_type = infer_term(record, context)
             if not isinstance(record_type, L4.Record):
@@ -345,8 +328,14 @@ def boil_types(
             return L3.Primitive(operator=operator, left=recur(left), right=recur(right))
 
         case L4.Branch(operator=operator, left=left, right=right, consequent=consequent, otherwise=otherwise):
-            return L3.Branch(operator=operator, left=recur(left), right=recur(right), consequent=recur(consequent), otherwise=recur(otherwise))
-    
+            return L3.Branch(
+                operator=operator,
+                left=recur(left),
+                right=recur(right),
+                consequent=recur(consequent),
+                otherwise=recur(otherwise),
+            )
+
         case L4.Allocate(count=count):
             return L3.Allocate(count=count)
 
@@ -359,4 +348,3 @@ def boil_types(
         case L4.Begin(effects=effects, value=value): # pragma: no branch
             # Is last one so is yellow
             return L3.Begin(value=recur(value), effects=[recur(e) for e in effects])
-            
