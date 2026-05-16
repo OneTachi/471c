@@ -5,37 +5,48 @@ from .syntax import (
     Allocate,
     Apply,
     Begin,
-    Bool,
     Branch,
     GetRecordValue,
     GetTupleValue,
     Identifier,
     Immediate,
     Let,
-    LetRec,
     Load,
+    MakeBool,
+    MakeRecord,
+    MakeSymbol,
+    MakeTuple,
     Primitive,
-    Record,
     Reference,
     Store,
-    Symbol,
     Term,
-    Tuple,
+    Type,
 )
 
 
+def isSubtype(
+    actual: Type,
+    expected: Type,
+) -> bool:
+    try:
+        coerce(actual, expected)
+        return True
+    except ValueError:
+        return False
+    
+
 # See Turbak. 12.1.2 Dimensions of Subtyping: Subset Semantics versus Coercion Semantics of Subtyping
 def coerce(
-    actual: Term,
-    expected: Term,
+    actual: Type,
+    expected: Type,
 ) -> Term:
     _coerce = partial(coerce)
 
-    if equivalent(actual, expected):
-        return actual
+    # if equivalent(actual, expected):
+    #    return actual
 
     match actual, expected:
-        case Record(fields=fs1), Record(fields=fs2):
+        case MakeRecord(fields=fs1), MakeRecord(fields=fs2):
             sorted_expected = sorted(fs2)
 
             components: list[tuple[Identifier, Term]] = []
@@ -47,9 +58,9 @@ def coerce(
 
                 components.append((key, expected_ty))
 
-            return Record(fields=components)
+            return MakeRecord(fields=components)
 
-        case Tuple(values=v1), Tuple(values=v2):
+        case MakeTuple(values=v1), MakeTuple(values=v2):
             if len(v2) > len(v1):
                 raise ValueError(f"expected tuple of length {len(v2)}, but got tuple of length {len(v1)}")
 
@@ -58,10 +69,13 @@ def coerce(
             for i in range(len(v2)):
                 new_vals.append(_coerce(v1[i], v2[i]))
 
-            return Tuple(values=new_vals)
+            return MakeTuple(values=new_vals)
 
         case _:
             raise ValueError(f"can not convert from {actual} to {expected}")
+
+
+
 
 
 def equivalent(
@@ -69,13 +83,13 @@ def equivalent(
     t2: Term,
 ) -> bool:
     match t1, t2:
-        case Record(fields=fs1), Record(fields=fs2):
+        case MakeRecord(fields=fs1), MakeRecord(fields=fs2):
             if len(fs1) != len(fs2):
                 return False
 
             return all(k1 == k2 and equivalent(v1, v2) for (k1, v1), (k2, v2) in zip(fs1, fs2))
 
-        case Tuple(values=v1), Tuple(values=v2):
+        case MakeTuple(values=v1), MakeTuple(values=v2):
             if len(v1) != len(v2):
                 return False
             return all(equivalent(item1, item2) for item1, item2 in zip(v1, v2))
@@ -138,18 +152,10 @@ def equivalent(
                     return False
             return equivalent(body1, body2)
 
-        case LetRec(bindings=b1, body=body1), LetRec(bindings=b2, body=body2):
-            if len(b1) != len(b2):
-                return False
-            for (k1, v1), (k2, v2) in zip(b1, b2):
-                if k1 != k2 or not equivalent(v1, v2):
-                    return False
-            return equivalent(body1, body2)
-
-        case Bool(value=v1), Bool(value=v2):
+        case MakeBool(value=v1), MakeBool(value=v2):
             return v1 == v2
 
-        case Symbol(name=n1), Symbol(name=n2):
+        case MakeSymbol(name=n1), MakeSymbol(name=n2):
             return n1 == n2
 
         case _:
